@@ -10,6 +10,12 @@ from mpl_toolkits.mplot3d import Axes3D
 # Axes3D import has side effects, it enables using projection='3d' in add_subplot
 import random
 import time
+import json
+
+
+JSON_FILE = "data.json"
+
+
 
 import math
 
@@ -18,6 +24,29 @@ class IMU:
         self.x = x
         self.y = y
         self.t = t
+
+
+class prediction:
+    
+    def __init__(self, paramTypeLocalisation, paramTypeTdA):
+        self.typeLocalisation = paramTypeLocalisation
+        self.typeTdA = paramTypeTdA
+        
+    def addData(self,paramData):
+        self.data = paramData
+        
+    def saveToJson(self):
+        tempSuperDict = {}
+        with open(JSON_FILE) as f:
+            tempSuperDict = json.load(f)
+        tempDict = {}
+        tempDict["typeLocalisation"] = self.typeLocalisation
+        tempDict["typeTdA"] = self.typeTdA
+        tempDict["data"] = self.data
+        tempSuperDict["Predictions" + str(len(tempSuperDict)+1)]= tempDict
+        with open(JSON_FILE, 'w') as f:
+            json.dump(tempSuperDict, f)            
+
 
 
 Imu1 = IMU(0,0,0)
@@ -36,10 +65,6 @@ def tij(first,second): # Différence de temps d'arrivée
 
 def di(source,sensor): # Norme entre 2 points
     return math.sqrt(math.pow((sensor.x-source.x),2)+math.pow((sensor.y-source.y),2)) # Vérifier le calcul et les valeurs
-
-
-# def toMinimize(x,y): 
-#     return math.pow(2*(math.pow(x,2)+math.pow(y,2)-x*Imu2.x-x*Imu3.x-y*Imu2.y-y*Imu3.y)+(math.pow(Imu2.x,2) + math.pow(Imu3.x,2) + math.pow(Imu2.y,2) + math.pow(Imu3.y,2))-(math.pow((Imu2.t/Imu1.t),2) + math.pow((Imu3.t/Imu1.t),2))*(math.pow(x, 2) + math.pow(y, 2) - 2*(x*Imu1.x+y*Imu1.y) + math.pow(Imu1.x, 2) + math.pow(Imu1.y, 2)),2) 
 
 
 def toMinimizeBis(coordonates): # Fonction à minimiser tirée de la revue de Kundu et al.
@@ -125,39 +150,18 @@ def main():
     nb_impact = len(ImpactAccelero)
     
     allNormErrors = []
-    for current_impact_index in range(100): # Pour le pic en valeur absolue, ça donne une valeur absurde pour 112
+    for current_impact_index in range(10): # Pour le pic en valeur absolue, ça donne une valeur absurde pour 112
         if current_impact_index != 112:
             initialize_IMU(ImpactAccelero[current_impact_index],IMULocalisations[current_impact_index])
             foundPoint = findPoint(ImpactAccelero[current_impact_index])
             norm_Error = math.sqrt(math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][1][0]),2))
-            # print(norm_Error)
             allNormErrors.append(norm_Error)
         # plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
     analysis(allNormErrors)
-    # for i in range(100):
-    # ko = 112
-    # plt.plot(ImpactAccelero[ko][1][10:20])
-    # # plt.plot(ImpactAccelero[ko][4][10:60])
-    # # plt.plot(ImpactAccelero[ko][7][10:60])
-    # # plt.plot(ImpactAccelero[ko][10][10:60])
-    # # plt.plot(ImpactAccelero[ko][13][10:60])
-    # # plt.plot(ImpactAccelero[ko][16][10:60])
-    # # plt.plot(ImpactAccelero[ko][19][10:60])
-    # # plt.plot(ImpactAccelero[ko][22][10:60])
-    # plt.show()
-    # # print(IMULocalisations[111])
-    # # print(IMULocalisations[112])
-    # initialize_IMU(ImpactAccelero[ko],IMULocalisations[ko])
-    # print(Imu1.t)
-    # print(Imu2.t)
-    # print(Imu3.t)
-    # print(Imu4.t)
-    # print(Imu5.t)
-    # print(Imu6.t)
-    # print(Imu7.t)
-    # print(Imu8.t)
-    # print(ImpactLocalisation[ko][0][0],ImpactLocalisation[ko][1][0])
-    # # plotPoints(ImpactLocalisation[112],ImpactLocalisation[112],112)
+    pred = prediction("Trilateration", "SeuilNaif")
+    pred.addData(allNormErrors)
+    pred.saveToJson()
+
   
 
 
