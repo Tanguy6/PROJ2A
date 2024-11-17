@@ -26,7 +26,7 @@ class IMU:
         self.t = t
 
 
-class prediction:
+class Prediction:
     
     def __init__(self, paramTypeLocalisation, paramTypeTdA):
         self.typeLocalisation = paramTypeLocalisation
@@ -48,6 +48,52 @@ class prediction:
             json.dump(tempSuperDict, f)            
 
 
+class dataVisualizer:
+    
+    def __init__(self, nameFile):
+        self.predictions = []
+        with open(nameFile) as f:
+            tempSuperDict = json.load(f)
+        # print(tempSuperDict)
+        for prediction in tempSuperDict.values():
+            # print(prediction)
+            self.predictions.append(Prediction(prediction["typeLocalisation"], prediction["typeTdA"]))
+            self.predictions[-1].addData(prediction["data"])
+            
+            
+    def showData(self):
+        for pred in self.predictions:
+            print(pred.data)
+            
+            
+    def compareData(self, typeLocTab, typeTdATab):
+        length = len(typeLocTab)
+        sortedData = [] 
+        for i in range(0,length):
+            sortedData.append([])
+            for pred in self.predictions:
+                if pred.typeLocalisation == typeLocTab[i] and pred.typeTdA == typeTdATab[i]:
+                    sortedData[i].extend(pred.data)
+        for i in range(0,length):
+            print("Voici toutes les données de type " + typeLocTab[i] + " et " + typeTdATab[i])
+            # print(sortedData[i])
+        handles = []
+        handlesLabel = []
+        medianData = []
+        ecartData = []    
+        for i in range(0,length):
+            medianData.append(stat.median(sortedData[i]))
+            ecartData.append(stat.pstdev(sortedData[i]))
+        for i in range(0,length):
+            handles.append(plt.scatter(stat.median(sortedData[i]),stat.pstdev(sortedData[i]),label=typeTdATab[i]))
+            handlesLabel.append(typeLocTab[i] + " " + typeTdATab[i])
+        plt.legend(handles,handlesLabel)
+        plt.ylabel('Écart-type')
+        plt.xlabel('Médiane')
+        plt.xlim(0, max(medianData)+ 1)
+        plt.ylim(0, max(ecartData)+ 1)
+        print(medianData)
+        print(ecartData)
 
 Imu1 = IMU(0,0,0)
 Imu2 = IMU(0,1,0)
@@ -142,26 +188,28 @@ def analysis(tabValue):
     plt.show()
 
 def main():
-    ImpactAccelero = np.load("Data/impacteur_accelero.npy")
-    ImpactLocalisation = np.load("Data/impacteur_localisation.npy")
-    IMULocalisations = np.load("Data/impacteur_pos_accelero.npy") # Contient la position moyenne de chaque IMU en x,y,z pour chaque impact
+    # ImpactAccelero = np.load("Data/impacteur_accelero.npy")
+    # ImpactLocalisation = np.load("Data/impacteur_localisation.npy")
+    # IMULocalisations = np.load("Data/impacteur_pos_accelero.npy") # Contient la position moyenne de chaque IMU en x,y,z pour chaque impact
 
     
-    nb_impact = len(ImpactAccelero)
+    # nb_impact = len(ImpactAccelero)
     
-    allNormErrors = []
-    for current_impact_index in range(10): # Pour le pic en valeur absolue, ça donne une valeur absurde pour 112
-        if current_impact_index != 112:
-            initialize_IMU(ImpactAccelero[current_impact_index],IMULocalisations[current_impact_index])
-            foundPoint = findPoint(ImpactAccelero[current_impact_index])
-            norm_Error = math.sqrt(math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][1][0]),2))
-            allNormErrors.append(norm_Error)
-        # plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
-    analysis(allNormErrors)
-    pred = prediction("Trilateration", "SeuilNaif")
-    pred.addData(allNormErrors)
-    pred.saveToJson()
-
+    # allNormErrors = []
+    # for current_impact_index in range(115,156): # Pour le pic en valeur absolue, ça donne une valeur absurde pour 112
+    #     if current_impact_index != 112:
+    #         initialize_IMU(ImpactAccelero[current_impact_index],IMULocalisations[current_impact_index])
+    #         foundPoint = findPoint(ImpactAccelero[current_impact_index])
+    #         norm_Error = math.sqrt(math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][1][0]),2))
+    #         allNormErrors.append(norm_Error)
+    #     # plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
+    # analysis(allNormErrors)
+    # pred = Prediction("Trilateration", "CrossCorrelation")
+    # pred.addData(allNormErrors)
+    # pred.saveToJson()
+    test = dataVisualizer(JSON_FILE)
+    # test.showData()
+    test.compareData(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"])
   
 
 

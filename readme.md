@@ -40,9 +40,11 @@ Voici la découpe des différents objectifs.
 
 - [x] Calcul de valeurs statistiques (Moyenne, Médiane, Écart-type)
 
-- [ ] Sauvegarde des données dans un fichier pour traiter les différences entre méthodes
+- [X] Sauvegarde des données dans un fichier pour traiter les différences entre méthodes
 
+- [x] Affichage des différences en médiane et écart-type des différentes méthodes
 
+- [ ] Utilisation ergonomique de l'affichage
 
 ### Intégration
 
