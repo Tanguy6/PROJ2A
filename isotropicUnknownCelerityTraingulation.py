@@ -12,6 +12,7 @@ from classDefinition import IMU
 from classDefinition import Prediction
 from classDefinition import dataVisualizer
 from classDefinition import JSON_FILE
+from classDefinition import Finder
 
 
 Imu1 = IMU(0,0,0)
@@ -25,6 +26,8 @@ Imu8 = IMU(1,0,0)
 
 n = 8
 
+Tab = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
+
 def tij(first,second): # Différence de temps d'arrivée
     return (first.t - second.t)*0.001 # Mettre des secondes au lieu des indices de tableau
 
@@ -32,22 +35,22 @@ def di(source,sensor): # Norme entre 2 points
     return math.sqrt(math.pow((sensor.x-source.x),2)+math.pow((sensor.y-source.y),2)) # Vérifier le calcul et les valeurs
 
 
-def toMinimizeBis(coordonates): # Fonction à minimiser tirée de la revue de Kundu et al.
-    Tab = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
-    Imu9 = IMU(coordonates[0], coordonates[1], 0)
-    toRet = 0
-    for i in range(0, n-1):
-        for j in range(i, n):
-            for k in range(0, n-1):
-                for l in range(k,n):
-                    toRet += math.pow(  tij(Tab[i],Tab[j])*(di(Imu9, Tab[k]) - di(Imu9, Tab[l])) - tij(Tab[k],Tab[l])*(di(Imu9, Tab[i]) - di(Imu9, Tab[j])) ,2)
-    return toRet
+# def trilaterationMethod(coordonates): # Fonction à minimiser tirée de la revue de Kundu et al.
+#     Tab = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
+#     Imu9 = IMU(coordonates[0], coordonates[1], 0)
+#     toRet = 0
+#     for i in range(0, n-1):
+#         for j in range(i, n):
+#             for k in range(0, n-1):
+#                 for l in range(k,n):
+#                     toRet += math.pow(  tij(Tab[i],Tab[j])*(di(Imu9, Tab[k]) - di(Imu9, Tab[l])) - tij(Tab[k],Tab[l])*(di(Imu9, Tab[i]) - di(Imu9, Tab[j])) ,2)
+#     return toRet
 
-def findPeak(tab): # Implémentation naive pour trouver le TdA
-    ss = len(tab)
-    for i in range(ss):
-        if abs(tab[i]) > 0.5: # À mettre à valeur positive
-            return i
+# def findPeak(tab): # Implémentation naive pour trouver le TdA
+#     ss = len(tab)
+#     for i in range(ss):
+#         if abs(tab[i]) > 0.5: # À mettre à valeur positive
+#             return i
         
 # Verification de la "bonne" détection en regardant que t=0 soit bien sur le premier IMU
         
@@ -61,14 +64,14 @@ def plotPoints(knownPoint,foundPoint,i):
     
 def initialize_IMU(CurrentImpactAccelero,CurrentIMULocalisations):
     # Initialisation du temps
-    Imu1.t = findPeak(CurrentImpactAccelero[1])
-    Imu2.t = findPeak(CurrentImpactAccelero[4])
-    Imu3.t = findPeak(CurrentImpactAccelero[7])
-    Imu4.t = findPeak(CurrentImpactAccelero[10])
-    Imu5.t = findPeak(CurrentImpactAccelero[13])
-    Imu6.t = findPeak(CurrentImpactAccelero[16])
-    Imu7.t = findPeak(CurrentImpactAccelero[19])
-    Imu8.t = findPeak(CurrentImpactAccelero[22])
+    Imu1.t = CurrentImpactAccelero[1]
+    Imu2.t = CurrentImpactAccelero[4]
+    Imu3.t = CurrentImpactAccelero[7]
+    Imu4.t = CurrentImpactAccelero[10]
+    Imu5.t = CurrentImpactAccelero[13]
+    Imu6.t = CurrentImpactAccelero[16]
+    Imu7.t = CurrentImpactAccelero[19]
+    Imu8.t = CurrentImpactAccelero[22]
     # Initialisation des positions en x
     Imu1.x = CurrentIMULocalisations[0][0]
     Imu2.x = CurrentIMULocalisations[1][0]
@@ -109,64 +112,65 @@ valeurSeuil = 0.5
 traitementAccelerometre = "AxeZ"
 dataSet = "ImpactStage"
 
-def findPoint(CurrentImpactAccelero): # Réalise l'optimisation
-    x0 = [0,0]
-    res = sc.optimize.minimize(toMinimizeBis, x0, method=typeOptimisation, tol=1e-6)
-    return res.x
+# def findPoint(CurrentImpactAccelero): # Réalise l'optimisation
+#     x0 = [0,0]
+#     # Bounds et point de départ ( qui ne change pas forcément grand chose ) 
+#     res = sc.optimize.minimize(trilaterationMethod, x0, method=typeOptimisation, tol=1e-6)
+#     return res.x
 
-def findPeak(tab): # Implémentation naive pour trouver le TdA
-    ss = len(tab)
-    for i in range(ss):
-        if abs(tab[i]) > valeurSeuil: # À mettre à valeur positive
-            return i
+# def findPeak(tab): # Implémentation naive pour trouver le TdA
+#     ss = len(tab)
+#     for i in range(ss):
+#         if abs(tab[i]) > valeurSeuil: # À mettre à valeur positive
+#             return i
 
 
 
 def chargerDataSet(dataSetParam):
     match dataSetParam:
         case "SautStage":
-            print("Not implemented")
+            print("Pas implémenté.")
         case "ImpactStage":
             return (np.load("Data/impacteur_accelero.npy"),np.load("Data/impacteur_localisation.npy"),np.load("Data/impacteur_pos_accelero.npy"))
         case "ToutStage":
-            print("Not implemented")
+            print("Pas implémenté.")
         case "SautMiniProj":
-            print("Not implemented")
+            print("Pas implémenté.")
         case "ImpactMiniProj":
-            print("Not implemented")
+            print("Pas implémenté.")
         case "ToutMiniProj":
-            print("Not implemented")
+            print("Pas implémenté.")
         case "Tout":
-            print("Not implemented")
+            print("Pas implémenté.")
         case _:
             print("Ce dataset n'est pas valable.")    
 
 def main():
-    (ImpactAccelero, ImpactLocalisation, IMULocalisations) = chargerDataSet(dataSet)
-    
-    
-    # ImpactAccelero = np.load("Data/impacteur_accelero.npy")
-    # ImpactLocalisation = np.load("Data/impacteur_localisation.npy")
-    # IMULocalisations = np.load("Data/impacteur_pos_accelero.npy") # Contient la position moyenne de chaque IMU en x,y,z pour chaque impact
 
+    finder = Finder(typeLocalisation,typeTdA,typeOptimisation,valeurSeuil,traitementAccelerometre,dataSet,Tab)
     
-    # nb_impact = len(ImpactAccelero)
+    (ImpactAccelero, ImpactLocalisation, IMULocalisations) = chargerDataSet(dataSet)
+    nb_impact = len(ImpactAccelero)
     
-    # allNormErrors = []
-    # for current_impact_index in range(115,156): # Pour le pic en valeur absolue, ça donne une valeur absurde pour 112
-    #     if current_impact_index != 112:
-    #         initialize_IMU(ImpactAccelero[current_impact_index],IMULocalisations[current_impact_index])
-    #         foundPoint = findPoint(ImpactAccelero[current_impact_index])
-    #         norm_Error = math.sqrt(math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][1][0]),2))
-    #         allNormErrors.append(norm_Error)
-    #     # plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
+    allNormErrors = []
+    
+    
+    for current_impact_index in range(115,126): # Pour le pic en valeur absolue, ça donne une valeur absurde pour 112
+        if current_impact_index != 112:
+             initialize_IMU(ImpactAccelero[current_impact_index],IMULocalisations[current_impact_index])
+             finder.tableauImus = Tab
+             foundPoint = finder.getPredictedPoint()
+             norm_Error = math.sqrt(math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][1][0]),2))
+             allNormErrors.append(norm_Error)
+        plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
+    
     # analysis(allNormErrors)
     # pred = Prediction("Trilateration", "CrossCorrelation")
     # pred.addData(allNormErrors)
     # pred.saveToJson()
-    test = dataVisualizer(JSON_FILE)
+    # test = dataVisualizer(JSON_FILE)
     # test.showData()
-    test.compareData(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"])
+    # test.compareData(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"])
   
 
 
