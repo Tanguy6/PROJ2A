@@ -21,9 +21,25 @@ def testCrossCorrelation():
     # plt.plot(x,y,x,yy)
     # plt.show()
     
+def hilbertEnveloppe(signal1):
+    hilbertTransform = scp.signal.hilbert(signal1)
+    enveloppe = np.abs(hilbertTransform)
+    # Et il faut mettre un seuil sur cette enveloppe. Là encore, à voir ...
+
+def testhilbertEnveloppe():
+    duration = 1.0
+    fs = 400.0
+    samples = int(fs*duration)
+    t = np.arange(samples) / fs
+    signal = scp.signal.chirp(t, 20.0, t[-1], 100.0)
+    signal *= (1.0 + 0.5 * np.sin(2.0*np.pi*3.0*t) )
+    hilbertTransform = scp.signal.hilbert(signal)
+    enveloppe = np.abs(hilbertTransform)
+    plt.plot(t,signal,t,enveloppe)
     
 def main():
     # testCrossCorrelation() # Affiche 13, avec les arrondis j'imagine
+    hilbertEnveloppe("E")
     print("End Main")
     
     
