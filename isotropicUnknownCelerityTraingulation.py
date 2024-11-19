@@ -105,7 +105,7 @@ def analysis(tabValue):
 typeLocalisation = "Trilateration"
 typeTdA = "SeuilNaif"
 typeOptimisation = "Nelder-Mead" 
-valeurSeuil = 2
+valeurSeuil = 0.5
 traitementAccelerometre = "AxeZ"
 dataSet = "ImpactStage"
 
@@ -113,6 +113,14 @@ def findPoint(CurrentImpactAccelero): # Réalise l'optimisation
     x0 = [0,0]
     res = sc.optimize.minimize(toMinimizeBis, x0, method=typeOptimisation, tol=1e-6)
     return res.x
+
+def findPeak(tab): # Implémentation naive pour trouver le TdA
+    ss = len(tab)
+    for i in range(ss):
+        if abs(tab[i]) > valeurSeuil: # À mettre à valeur positive
+            return i
+
+
 
 def chargerDataSet(dataSetParam):
     match dataSetParam:

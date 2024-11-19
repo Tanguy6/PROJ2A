@@ -43,23 +43,23 @@ Voici la découpe des différents objectifs.
 ## Paramètres de réglage implémentés
 
 - typeLocalisation
-  - [ ]  Trilateration
+  - [X]  Trilateration
 - typeTdA
   - [ ] SeuilNaif
   - [ ] CrossCorrelation
   - [ ] SeuilEnveloppe
   - [ ] TransforméeOndelette
 - typeOptimisation
-  - [ ] Nelder-Mead
+  - [X] Nelder-Mead
 - valeurSeuil
-  - [ ] int
+  - [X] int
   - [ ] Adaptatif ?
 - TraitementAccelerometre
-  - [ ] AxeZ
+  - [X] AxeZ
   - [ ] Norme
 - dataSet
   - [ ] SautStage
-  - [ ] ImpactStage
+  - [X] ImpactStage
   - [ ] ToutStage
   - [ ] SautMiniProjet
   - [ ] ImpactMiniProjet
