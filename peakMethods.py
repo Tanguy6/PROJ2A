@@ -55,6 +55,8 @@ def tij(first,second,seuilValue): # Différence de temps d'arrivée
 def di(source,sensor): # Norme entre 2 points
     return math.sqrt(math.pow((sensor.x-source.x),2)+math.pow((sensor.y-source.y),2)) # Vérifier le calcul et les valeurs
 
+
+
 def main():
     testCrossCorrelation()
     print("End Main")

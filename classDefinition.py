@@ -21,6 +21,7 @@ from peakMethods import crossCorrelation
 from peakMethods import hilbertEnveloppe
 from peakMethods import di
 
+
 class Prediction:
     
     
@@ -111,14 +112,14 @@ class dataVisualizer:
 # les paramètres utilisés.
 class Finder:
     
-    def __init__(self,typeLocalisationParam, typeTdAParam, typeOptimisationParam, valeurSeuilParam, traitementAccelerometreParam, dataSetParam, tableauImusParam):
+    def __init__(self,typeLocalisationParam, typeTdAParam, typeOptimisationParam, valeurSeuilParam, traitementAccelerometreParam, dataSetParam):
         self.typeLocalisation =  typeLocalisationParam
         self.typeTdA = typeTdAParam
         self.typeOptimisation = typeOptimisationParam 
         self.valeurSeuil = valeurSeuilParam 
         self.traitementAccelerometre =  traitementAccelerometreParam
         self.dataSet = dataSetParam
-        self.tableauImus = tableauImusParam
+        # self.tableauImus = tableauImusParam
 
 
     def getTdA(self,first,second):
@@ -135,25 +136,19 @@ class Finder:
                 print("Cette méthode n'est pas valable.")    
      
         
-    def trilaterationMethod(self, coordonates): # Fonction à minimiser tirée de la revue de Kundu et al.
-        n = len(self.tableauImus)
-        Imu9 = IMU(coordonates[0], coordonates[1], 0)
-        toRet = 0
-        for i in range(0, n-1):
-            for j in range(i, n):
-                for k in range(0, n-1):
-                    for l in range(k,n):
-                        toRet += math.pow(self.getTdA(self.tableauImus[i],self.tableauImus[j])*(di(Imu9, self.tableauImus[k]) - di(Imu9, self.tableauImus[l])) - self.getTdA(self.tableauImus[k],self.tableauImus[l])*(di(Imu9, self.tableauImus[i]) - di(Imu9, self.tableauImus[j])) ,2)
-        return toRet
+    
      
     def getPredictedPoint(self):
+        from isotropicUnknownCelerityTraingulation import trilaterationMethod
         x0 = [1,1] # On le centre par rapport à notre tapis, bien que la différence de résultat ne soit a priori pas significative
         b=((-0.1,1.9), (-0.1,1.9))
         match self.typeOptimisation:
             case "Default":
                 match self.typeLocalisation:
                     case "Trilateration" :
-                        res = sc.optimize.minimize(self.trilaterationMethod, x0, bounds=b)
+                        print("Before")
+                        res = sc.optimize.minimize(trilaterationMethod, x0, bounds=b)
+                        print("After")
                         return res.x
                     case "NeuralNetwork" :
                         print("")
