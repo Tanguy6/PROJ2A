@@ -42,29 +42,18 @@ def testhilbertEnveloppe():
     plt.plot(t,signal,t,enveloppe)
     
   
-def findPeak(tab): # Implémentation naive pour trouver le TdA
+def findPeak(tab,seuilValue): # Implémentation naive pour trouver le TdA
     ss = len(tab)
     for i in range(ss):
-        if abs(tab[i]) > 0.5: # À mettre à valeur positive
+        if abs(tab[i]) > seuilValue: # À mettre à valeur positive
             return i
       
-def tij(first,second): # Différence de temps d'arrivée
+def tij(first,second,seuilValue): # Différence de temps d'arrivée
     # return (first.t - second.t)*0.001 # Mettre des secondes au lieu des indices de tableau    
-    return (findPeak(first.t) - findPeak(second.t))
+    return (findPeak(first.t,seuilValue) - findPeak(second.t,seuilValue))
 
 def di(source,sensor): # Norme entre 2 points
     return math.sqrt(math.pow((sensor.x-source.x),2)+math.pow((sensor.y-source.y),2)) # Vérifier le calcul et les valeurs
-
-def trilaterationMethod(coordonates,Tab): # Fonction à minimiser tirée de la revue de Kundu et al.
-    n = len(Tab)
-    Imu9 = IMU(coordonates[0], coordonates[1], 0)
-    toRet = 0
-    for i in range(0, n-1):
-        for j in range(i, n):
-            for k in range(0, n-1):
-                for l in range(k,n):
-                    toRet += math.pow(  tij(Tab[i],Tab[j])*(di(Imu9, Tab[k]) - di(Imu9, Tab[l])) - tij(Tab[k],Tab[l])*(di(Imu9, Tab[i]) - di(Imu9, Tab[j])) ,2)
-    return toRet
 
 def main():
     testCrossCorrelation()

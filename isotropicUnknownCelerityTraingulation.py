@@ -56,9 +56,9 @@ def di(source,sensor): # Norme entre 2 points
         
 def plotPoints(knownPoint,foundPoint,i): 
     plt.plot(foundPoint[1],foundPoint[0],'rx',label=f"found point {i}")
-    plt.plot(knownPoint[0],knownPoint[1],'bx',label="known point")
-    plt.ylim(0, 2)
-    plt.xlim(0, 2)
+    plt.plot(knownPoint[1],knownPoint[0],'bx',label="known point")
+    plt.ylim(-0.1,1.9)
+    plt.xlim(-0.1,1.9)
     plt.legend(loc="upper left")
     plt.show()
     
@@ -107,8 +107,8 @@ def analysis(tabValue):
 # Voir les options disponibles dans la classe "Prediction" du fichier classDefinition
 typeLocalisation = "Trilateration"
 typeTdA = "SeuilNaif"
-typeOptimisation = "Nelder-Mead" 
-valeurSeuil = 0.5
+typeOptimisation = "Default" 
+valeurSeuil = 7
 traitementAccelerometre = "AxeZ"
 dataSet = "ImpactStage"
 
@@ -155,12 +155,12 @@ def main():
     allNormErrors = []
     
     
-    for current_impact_index in range(115,126): # Pour le pic en valeur absolue, ça donne une valeur absurde pour 112
+    for current_impact_index in range(0,10): # Pour le pic en valeur absolue, ça donne une valeur absurde pour 112
         if current_impact_index != 112:
              initialize_IMU(ImpactAccelero[current_impact_index],IMULocalisations[current_impact_index])
-             finder.tableauImus = Tab
+             finder.tableauImus = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
              foundPoint = finder.getPredictedPoint()
-             norm_Error = math.sqrt(math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][1][0]),2))
+             norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
              allNormErrors.append(norm_Error)
         plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
     
