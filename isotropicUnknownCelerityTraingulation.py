@@ -39,7 +39,7 @@ def findPeak(tab,seuilValue): # Implémentation naive pour trouver le TdA
 
 def tij(first,second,seuilValue): # Différence de temps d'arrivée
     # return (first.t - second.t)*0.001 # Mettre des secondes au lieu des indices de tableau    
-    print(first.t)
+    # print(first.t)
     return (findPeak(first.t,seuilValue) - findPeak(second.t,seuilValue))
 
 
@@ -188,44 +188,28 @@ dataSet = "ImpactStage"
 
 
 
-def chargerDataSet(dataSetParam):
-    match dataSetParam:
-        case "SautStage":
-            print("Pas implémenté.")
-        case "ImpactStage":
-            return (np.load("Data/impacteur_accelero.npy"),np.load("Data/impacteur_localisation.npy"),np.load("Data/impacteur_pos_accelero.npy"))
-        case "ToutStage":
-            print("Pas implémenté.")
-        case "SautMiniProj":
-            print("Pas implémenté.")
-        case "ImpactMiniProj":
-            print("Pas implémenté.")
-        case "ToutMiniProj":
-            print("Pas implémenté.")
-        case "Tout":
-            print("Pas implémenté.")
-        case _:
-            print("Ce dataset n'est pas valable.")    
+   
 
 def main():
 
     finder = Finder(typeLocalisation,typeTdA,typeOptimisation,valeurSeuil,traitementAccelerometre,dataSet)
-    
-    (ImpactAccelero, ImpactLocalisation, IMULocalisations) = chargerDataSet(dataSet)
-    nb_impact = len(ImpactAccelero)
+    finder.chargerDataSet()
+    # (ImpactAccelero, ImpactLocalisation, IMULocalisations) = chargerDataSet(dataSet)
+    # nb_impact = len(ImpactAccelero)
     
     allNormErrors = []
     
     
     for current_impact_index in range(0,10): # Pour le pic en valeur absolue, ça donne une valeur absurde pour 112
         if current_impact_index != 112:
-             initialize_IMU(ImpactAccelero[current_impact_index],IMULocalisations[current_impact_index],traitementAccelerometre)
-             Tab = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
-             print(Tab[0].t)
-             foundPoint = finder.getPredictedPoint()
-             norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
-             allNormErrors.append(norm_Error)
-        plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
+            finder.initialize_IMU(current_impact_index)
+             # initialize_IMU(ImpactAccelero[current_impact_index],IMULocalisations[current_impact_index],traitementAccelerometre)
+             # Tab = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
+             # print(Tab[0].t)
+            foundPoint = finder.getPredictedPoint()
+            norm_Error = math.sqrt(math.pow((foundPoint[0]-finder.getRealPoint(current_impact_index)[0][0]),2)+math.pow((foundPoint[1]-finder.getRealPoint(current_impact_index)[1][0]),2))
+            allNormErrors.append(norm_Error)
+            plotPoints(finder.getRealPoint(current_impact_index),foundPoint,current_impact_index)
     
     # analysis(allNormErrors)
     # pred = Prediction("Trilateration", "CrossCorrelation")

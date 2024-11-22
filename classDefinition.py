@@ -5,6 +5,7 @@ import statistics as stat
 import matplotlib.pyplot as plt
 import scipy as sc
 import math
+import numpy as np
 
 
 # Doit être placé là pour éviter un problème d'inclusion circulaire, i.e. 
@@ -119,6 +120,7 @@ class Finder:
         self.valeurSeuil = valeurSeuilParam 
         self.traitementAccelerometre =  traitementAccelerometreParam
         self.dataSet = dataSetParam
+        self.IMUS = [IMU(0,0,0),IMU(0,1,0),IMU(0,2,0),IMU(1,2,0),IMU(2,2,0),IMU(2,1,0),IMU(2,0,0),IMU(1,0,0)]
         # self.tableauImus = tableauImusParam
 
 
@@ -136,7 +138,107 @@ class Finder:
                 print("Cette méthode n'est pas valable.")    
      
         
+    def initialize_IMU(self,index):  
+        match self.traitementAccelerometre:
+            case "AxeZ":
+                for i in range(0,8):
+                    self.IMUS[i].t = self.ImpactAccelero[index][1+3*i]
+            case "Norme":
+                # On récupère la norme du vecteur accélération
+                m11 = np.transpose(np.linalg.norm(self.ImpactAccelero[index][0:3,:],axis=0))
+                m12 = np.transpose(np.linalg.norm(self.ImpactAccelero[index][3:6,:],axis=0))
+                m13 = np.transpose(np.linalg.norm(self.ImpactAccelero[index][6:9,:],axis=0))
+                m21 = np.transpose(np.linalg.norm(self.ImpactAccelero[index][9:12,:],axis=0))
+                m23 = np.transpose(np.linalg.norm(self.ImpactAccelero[index][12:15,:],axis=0))
+                m31 = np.transpose(np.linalg.norm(self.ImpactAccelero[index][15:18,:],axis=0))
+                m32 = np.transpose(np.linalg.norm(self.ImpactAccelero[index][18:21,:],axis=0))
+                m33 = np.transpose(np.linalg.norm(self.ImpactAccelero[index][21:24,:],axis=0))
+                 
+                M11 = np.zeros(np.shape(m11))
+                M12 = np.zeros(np.shape(m12))
+                M13 = np.zeros(np.shape(m13))
+                M21 = np.zeros(np.shape(m21))
+                M23 = np.zeros(np.shape(m23))
+                M31 = np.zeros(np.shape(m31))
+                M32 = np.zeros(np.shape(m32))
+                M33 = np.zeros(np.shape(m33))
+                 
+                # On enlève l'offset sur les mesures (Par exemple la gravité)
+                for i in range (len(m11)):
+                    M11[i] = m11[i]-m11[0]
+                    M12[i] = m12[i]-m12[0]
+                    M13[i] = m13[i]-m13[0]
+                    M21[i] = m21[i]-m21[0]
+                    M23[i] = m23[i]-m23[0]
+                    M31[i] = m31[i]-m31[0]
+                    M32[i] = m32[i]-m32[0]
+                    M33[i] = m33[i]-m33[0]
+                    
+                self.IMUS[0].t = M11
+                self.IMUS[1].t = M12
+                self.IMUS[2].t = M13
+                self.IMUS[3].t = M21
+                self.IMUS[4].t = M23
+                self.IMUS[5].t = M31
+                self.IMUS[6].t = M32
+                self.IMUS[7].t = M33  
+            case _:
+                print("Cette méthode pour récupérer l'accélération n'est pas valable.")
+                # Initialisation des positions en x
+                self.IMUS[0].x = self.ImpactLocalisation[index][0][0]
+                self.IMUS[1].x = self.ImpactLocalisation[index][1][0]
+                self.IMUS[2].x = self.ImpactLocalisation[index][2][0]
+                self.IMUS[3].x = self.ImpactLocalisation[index][3][0]
+                self.IMUS[4].x = self.ImpactLocalisation[index][4][0]
+                self.IMUS[5].x = self.ImpactLocalisation[index][5][0]
+                self.IMUS[6].x = self.ImpactLocalisation[index][6][0]
+                self.IMUS[7].x = self.ImpactLocalisation[index][7][0]
+                # Initialisation des positions en y
+                self.IMUS[0].y = self.ImpactLocalisation[index][0][1]
+                self.IMUS[1].y = self.ImpactLocalisation[index][1][1]
+                self.IMUS[2].y = self.ImpactLocalisation[index][2][1]
+                self.IMUS[3].y = self.ImpactLocalisation[index][3][1]
+                self.IMUS[4].y = self.ImpactLocalisation[index][4][1]
+                self.IMUS[5].y = self.ImpactLocalisation[index][5][1]
+                self.IMUS[6].y = self.ImpactLocalisation[index][6][1]
+                self.IMUS[7].y = self.ImpactLocalisation[index][7][1]
+        
+     
+    def trilaterationMethod(self,coordonates): # Fonction à minimiser tirée de la revue de Kundu et al.
+        n = 8
+        Imu9 = IMU(coordonates[0], coordonates[1], 0)
+        toRet = 0
+        for i in range(0, n-1):
+            for j in range(i, n):
+                for k in range(0, n-1):
+                    for l in range(k,n):
+                        # print(i)
+                        toRet += math.pow(tij(self.IMUS[i],self.IMUS[j],self.valeurSeuil)*(di(Imu9, self.IMUS[k]) - di(Imu9, self.IMUS[l])) - tij(self.IMUS[k],self.IMUS[l],self.valeurSeuil)*(di(Imu9, self.IMUS[i]) - di(Imu9, self.IMUS[j])) ,2)
+        return toRet
+     
+        
     
+    def getRealPoint(self,index):
+        return self.ImpactLocalisation[index]
+    
+    def chargerDataSet(self):
+        match self.dataSet:
+            case "SautStage":
+                print("Pas implémenté.")
+            case "ImpactStage":
+                (self.ImpactAccelero, self.ImpactLocalisation, self.IMULocalisations) = (np.load("Data/impacteur_accelero.npy"),np.load("Data/impacteur_localisation.npy"),np.load("Data/impacteur_pos_accelero.npy"))
+            case "ToutStage":
+                print("Pas implémenté.")
+            case "SautMiniProj":
+                print("Pas implémenté.")
+            case "ImpactMiniProj":
+                print("Pas implémenté.")
+            case "ToutMiniProj":
+                print("Pas implémenté.")
+            case "Tout":
+                print("Pas implémenté.")
+            case _:
+                print("Ce dataset n'est pas valable.") 
      
     def getPredictedPoint(self):
         from isotropicUnknownCelerityTraingulation import trilaterationMethod
@@ -146,9 +248,7 @@ class Finder:
             case "Default":
                 match self.typeLocalisation:
                     case "Trilateration" :
-                        print("Before")
-                        res = sc.optimize.minimize(trilaterationMethod, x0, bounds=b)
-                        print("After")
+                        res = sc.optimize.minimize(self.trilaterationMethod, x0, bounds=b)
                         return res.x
                     case "NeuralNetwork" :
                         print("")
@@ -157,7 +257,7 @@ class Finder:
             case "Nelder-Mead" | "Powell" | "CG" | "BFGS" | "Newton-CG" | "L-BFGS-B" | "TNC" | "COBYLA" | "SLSQP" | "trust-constr" | "dogleg" | "trust-ncg" | "trust-exact" | "trust-krylov" :
                 match self.typeLocalisation:
                     case "Trilateration" :
-                        res = sc.optimize.minimize(trilaterationMethod, x0, method=self.typeOptimisation, bounds=b)
+                        res = sc.optimize.minimize(self.trilaterationMethod, x0, method=self.typeOptimisation, bounds=b)
                         return res.x
                     case "NeuralNetwork" :
                         print("")
