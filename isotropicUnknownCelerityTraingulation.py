@@ -1,3 +1,12 @@
+
+# Tout est rassemble dans un seul code pour accelerer l'execution, par rapport
+# a l'optimisation qui fait beaucoup d'appel fonction.
+
+
+#######################################################
+#                    Import
+#######################################################
+
 import scipy as sc
 import statistics as stat
 import matplotlib.pyplot as plt
@@ -7,15 +16,39 @@ from mpl_toolkits.mplot3d import Axes3D
 import random
 import time
 import math
+import json
 
-from classDefinition import IMU
+#######################################################
+#                    Constantes
+#######################################################
+
+JSON_FILE = "data.json"
+
+# TYPE_LOCALISATION : "Trilateration" , "NeuralNetwork"
+TYPE_LOCALISATION = "Trilateration"
+# TYPE_TDA : "SeuilNaif" , "CrossCorrelation" , "SeuilEnveloppe" , "TransforméeOndelette"
+TYPE_TDA = "SeuilNaif"
+# TYPE_OPTIMISATION : "Default", "Nelder-Mead" , "Powell" , "CG" , "BFGS" , "Newton-CG" , "L-BFGS-B" , "TNC" , "COBYLA" , "SLSQP" , "trust-constr" , "dogleg" , "trust-ncg" , "trust-exact" , "trust-krylov"
+TYPE_OPTIMISATION = "Default" 
+# VALEUR_SEUIL : x
+VALEUR_SEUIL = 7
+# TRAITEMENT_ACCELEROMETRE : "AxeZ" , "Norme" 
+TRAITEMENT_ACCELEROMETRE = "Norme"
+# DATA_SET : "SautStage" , "ImpactStage", "ToutStage" , "SautMiniProj" , "ImpactMiniProj" , "ToutMiniProj" , "Tout"
+DATA_SET = "ImpactStage"
 
 
+#######################################################
+#                    Classes
+#######################################################
 
+class IMU:
+    def __init__(self, x, y,t):
+        self.x = x
+        self.y = y
+        self.t = t
 
-
-
-
+### On les affecte ici pour simplifier l'écriture
 
 Imu1 = IMU(0,0,0)
 Imu2 = IMU(0,1,0)
@@ -26,62 +59,168 @@ Imu6 = IMU(2,1,0)
 Imu7 = IMU(2,0,0)
 Imu8 = IMU(1,0,0)
 
-n = 8
-
 Tab = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
 
+n = len(Tab)
 
-def findPeak(tab,seuilValue): # Implémentation naive pour trouver le TdA
+class Prediction:
+    
+    
+    # On donne ici ce qui définit une prédiction, c'est-à-dire l'ensemble
+    # des paramètres sur lesquels on peut jouer.
+    # typeLocalisation : "Trilateration" , "NeuralNetwork"
+    # typeTdA : "SeuilNaif" , "CrossCorrelation" , "SeuilEnveloppe" , "TransforméeOndelette"
+    # typeOptimisation : "Nelder-Mead" , "" 
+    # valeurSeuil : int
+    # traitementAccelerometre : "AxeZ" , "Norme" 
+    # dataSet : "SautStage" , "ImpactStage", "ToutStage" , "SautMiniProj" , "ImpactMiniProj" , "ToutMiniProj" , "Tout"
+    
+    
+    # Statique
+    # Différence statistique : ANOVA
+    
+    
+    def __init__(self, paramTypeLocalisation, paramTypeTdA):
+        self.typeLocalisation = paramTypeLocalisation
+        self.typeTdA = paramTypeTdA
+        
+    def addData(self,paramData):
+        self.data = paramData
+        
+    def saveToJson(self):
+        tempSuperDict = {}
+        with open(JSON_FILE) as f:
+            tempSuperDict = json.load(f)
+        tempDict = {}
+        tempDict["typeLocalisation"] = self.typeLocalisation
+        tempDict["typeTdA"] = self.typeTdA
+        tempDict["data"] = self.data
+        tempSuperDict["Predictions" + str(len(tempSuperDict)+1)]= tempDict
+        with open(JSON_FILE, 'w') as f:
+            json.dump(tempSuperDict, f)  
+            
+class dataVisualizer:
+    
+    def __init__(self, nameFile):
+        self.predictions = []
+        with open(nameFile) as f:
+            tempSuperDict = json.load(f)
+        # print(tempSuperDict)
+        for prediction in tempSuperDict.values():
+            # print(prediction)
+            self.predictions.append(Prediction(prediction["typeLocalisation"], prediction["typeTdA"]))
+            self.predictions[-1].addData(prediction["data"])
+            
+            
+    def showData(self):
+        for pred in self.predictions:
+            print(pred.data)
+            
+            
+    def compareData(self, typeLocTab, typeTdATab):
+        length = len(typeLocTab)
+        sortedData = [] 
+        for i in range(0,length):
+            sortedData.append([])
+            for pred in self.predictions:
+                if pred.typeLocalisation == typeLocTab[i] and pred.typeTdA == typeTdATab[i]:
+                    sortedData[i].extend(pred.data)
+        for i in range(0,length):
+            print("Voici toutes les données de type " + typeLocTab[i] + " et " + typeTdATab[i])
+            # print(sortedData[i])
+        handles = []
+        handlesLabel = []
+        medianData = []
+        ecartData = []    
+        for i in range(0,length):
+            medianData.append(stat.median(sortedData[i]))
+            ecartData.append(stat.pstdev(sortedData[i]))
+        for i in range(0,length):
+            handles.append(plt.scatter(stat.median(sortedData[i]),stat.pstdev(sortedData[i]),label=typeTdATab[i]))
+            handlesLabel.append(typeLocTab[i] + " " + typeTdATab[i])
+        plt.legend(handles,handlesLabel)
+        plt.ylabel("Écart-type de la norme de l'erreur")
+        plt.xlabel("Médiane de la norme de l'erreur")
+        plt.xlim(0, max(medianData)+ 1)
+        plt.ylim(0, max(ecartData)+ 1)
+        print(medianData)
+        print(ecartData)
+
+#######################################################
+#                    Fonctions
+#######################################################
+
+######### Fonctions intermédiaires
+
+def findPeak(tab): # Implémentation naive pour trouver le TdA
     ss = len(tab)
     for i in range(ss):
-        if abs(tab[i]) > seuilValue: # À mettre à valeur positive
+        if abs(tab[i]) > VALEUR_SEUIL: # À mettre à valeur positive
             return i
 
-def tij(first,second,seuilValue): # Différence de temps d'arrivée
+def tij(first,second): # Différence de temps d'arrivée
     # return (first.t - second.t)*0.001 # Mettre des secondes au lieu des indices de tableau    
-    # print(first.t)
-    return (findPeak(first.t,seuilValue) - findPeak(second.t,seuilValue))
-
+    return (findPeak(first.t) - findPeak(second.t))
 
 def di(source,sensor): # Norme entre 2 points
     return math.sqrt(math.pow((sensor.x-source.x),2)+math.pow((sensor.y-source.y),2)) # Vérifier le calcul et les valeurs
 
+######### Fonctions de calcul de TdA 
 
-def trilaterationMethod(coordonates): # Fonction à minimiser tirée de la revue de Kundu et al.
-    n = len(Tab)
-    print(Tab[1].t)
+def crossCorrelation(signal1,signal2):
+    result = sc.signal.correlate(signal1, signal2,mode='full', method='auto') # Fait glisser le premier signal sur le deuxième en partant de la droite du tableau
+    return np.argmax(result) - len(signal1) # Le deltaT en indice
+    
+def hilbertEnveloppe(signal1):
+    hilbertTransform = sc.signal.hilbert(signal1)
+    enveloppe = np.abs(hilbertTransform)
+    return enveloppe
+    # Et il faut mettre un seuil sur cette enveloppe. Là encore, à voir ...
+      
+######### Fonctions de localisation
+
+def trilaterationMethodSeuilNaif(coordonates): # Fonction à minimiser tirée de la revue de Kundu et al.
     Imu9 = IMU(coordonates[0], coordonates[1], 0)
     toRet = 0
     for i in range(0, n-1):
         for j in range(i, n):
             for k in range(0, n-1):
                 for l in range(k,n):
-                    print(i)
-                    toRet += math.pow(tij(Tab[i],Tab[j],valeurSeuil)*(di(Imu9, Tab[k]) - di(Imu9, Tab[l])) - tij(Tab[k],Tab[l],valeurSeuil)*(di(Imu9, Tab[i]) - di(Imu9, Tab[j])) ,2)
+                    toRet += math.pow(tij(Tab[i],Tab[j])*(di(Imu9, Tab[k]) - di(Imu9, Tab[l])) - tij(Tab[k],Tab[l])*(di(Imu9, Tab[i]) - di(Imu9, Tab[j])) ,2)
     return toRet
 
+def trilaterationMethodCrossCorrelation(coordonates): # Fonction à minimiser tirée de la revue de Kundu et al.
+    Imu9 = IMU(coordonates[0], coordonates[1], 0)
+    toRet = 0
+    for i in range(0, n-1):
+        for j in range(i, n):
+            for k in range(0, n-1):
+                for l in range(k,n):
+                    toRet += math.pow(crossCorrelation(Tab[i].t,Tab[j].t)*(di(Imu9, Tab[k].t) - di(Imu9, Tab[l])) - crossCorrelation(Tab[k].t,Tab[l].t)*(di(Imu9, Tab[i]) - di(Imu9, Tab[j])) ,2)
+    return toRet
 
-from classDefinition import Prediction
-from classDefinition import dataVisualizer
-from classDefinition import JSON_FILE
-from classDefinition import Finder
+def trilaterationMethodSeuilEnveloppe(coordonates): # Fonction à minimiser tirée de la revue de Kundu et al.
+    Imu9 = IMU(coordonates[0], coordonates[1], 0)
+    toRet = 0
+    for i in range(0, n-1):
+        for j in range(i, n):
+            for k in range(0, n-1):
+                for l in range(k,n):
+                    toRet += math.pow(tij(hilbertEnveloppe(Tab[i].t),hilbertEnveloppe(Tab[j].t))*(di(Imu9, Tab[k]) - di(Imu9, Tab[l])) - tij(hilbertEnveloppe(Tab[k].t),hilbertEnveloppe(Tab[l].t))*(di(Imu9, Tab[i]) - di(Imu9, Tab[j])) ,2)
+    return toRet
 
-# def findPeak(tab): # Implémentation naive pour trouver le TdA
-#     ss = len(tab)
-#     for i in range(ss):
-#         if abs(tab[i]) > 0.5: # À mettre à valeur positive
-#             return i
-        
-# Verification de la "bonne" détection en regardant que t=0 soit bien sur le premier IMU
-        
-def plotPoints(knownPoint,foundPoint,i): 
-    plt.plot(foundPoint[1],foundPoint[0],'rx',label=f"found point {i}")
-    plt.plot(knownPoint[1],knownPoint[0],'bx',label="known point")
-    plt.ylim(-0.1,1.9)
-    plt.xlim(-0.1,1.9)
-    plt.legend(loc="upper left")
-    plt.show()
-    
+def trilaterationMethodTransforméeOndelette(coordonates): # Fonction à minimiser tirée de la revue de Kundu et al.
+    Imu9 = IMU(coordonates[0], coordonates[1], 0)
+    toRet = 0
+    for i in range(0, n-1):
+        for j in range(i, n):
+            for k in range(0, n-1):
+                for l in range(k,n):
+                    toRet += math.pow(tij(Tab[i],Tab[j])*(di(Imu9, Tab[k]) - di(Imu9, Tab[l])) - tij(Tab[k],Tab[l])*(di(Imu9, Tab[i]) - di(Imu9, Tab[j])) ,2)
+    return toRet
+
+ ######### Fonctions autres
+
 def initialize_IMU(CurrentImpactAccelero,CurrentIMULocalisations,traitementAccelerometreParam):  
     match traitementAccelerometreParam:
         case "AxeZ":
@@ -152,7 +291,16 @@ def initialize_IMU(CurrentImpactAccelero,CurrentIMULocalisations,traitementAccel
     Imu6.y = CurrentIMULocalisations[5][1]
     Imu7.y = CurrentIMULocalisations[6][1]
     Imu8.y = CurrentIMULocalisations[7][1]
+    Tab = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
 
+def plotPoints(knownPoint,foundPoint,i): 
+    plt.plot(foundPoint[1],foundPoint[0],'rx',label=f"found point {i}")
+    plt.plot(knownPoint[1],knownPoint[0],'bx',label="known point")
+    plt.ylim(-0.1,1.9)
+    plt.xlim(-0.1,1.9)
+    plt.legend(loc="upper left")
+    plt.show()
+    
 def analysis(tabValue):
     print("Moyenne : " + str(stat.mean(tabValue)))
     print("Écart-type : " + str(stat.pstdev(tabValue)))
@@ -164,53 +312,80 @@ def analysis(tabValue):
     plt.legend(bbox_to_anchor = (1.0, 1), loc = 'upper left')
     plt.show()
 
+def main(): 
+# TYPE_TDA 
 
-
-# Voir les options disponibles dans la classe "Prediction" du fichier classDefinition
-typeLocalisation = "Trilateration"
-typeTdA = "SeuilNaif"
-typeOptimisation = "Default" 
-valeurSeuil = 7
-traitementAccelerometre = "Norme"
-dataSet = "ImpactStage"
-
-# def findPoint(CurrentImpactAccelero): # Réalise l'optimisation
-#     x0 = [0,0]
-#     # Bounds et point de départ ( qui ne change pas forcément grand chose ) 
-#     res = sc.optimize.minimize(trilaterationMethod, x0, method=typeOptimisation, tol=1e-6)
-#     return res.x
-
-# def findPeak(tab): # Implémentation naive pour trouver le TdA
-#     ss = len(tab)
-#     for i in range(ss):
-#         if abs(tab[i]) > valeurSeuil: # À mettre à valeur positive
-#             return i
-
-
-
-   
-
-def main():
-
-    finder = Finder(typeLocalisation,typeTdA,typeOptimisation,valeurSeuil,traitementAccelerometre,dataSet)
-    finder.chargerDataSet()
-    # (ImpactAccelero, ImpactLocalisation, IMULocalisations) = chargerDataSet(dataSet)
-    # nb_impact = len(ImpactAccelero)
+    match DATA_SET:
+        case "SautStage":
+            print("Pas implémenté.")
+        case "ImpactStage":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/impacteur_accelero.npy"),np.load("Data/impacteur_localisation.npy"),np.load("Data/impacteur_pos_accelero.npy"))
+        case "ToutStage":
+            print("Pas implémenté.")
+        case "SautMiniProj":
+            print("Pas implémenté.")
+        case "ImpactMiniProj":
+            print("Pas implémenté.")
+        case "ToutMiniProj":
+            print("Pas implémenté.")
+        case "Tout":
+            print("Pas implémenté.")
+        case _:
+            print("Ce dataset n'est pas valable.") 
     
     allNormErrors = []
-    
+    x0 = [1,1] # On le centre par rapport à notre tapis, bien que la différence de résultat ne soit a priori pas significative
+    b=((-0.1,1.9), (-0.1,1.9))
     
     for current_impact_index in range(0,10): # Pour le pic en valeur absolue, ça donne une valeur absurde pour 112
         if current_impact_index != 112:
-            finder.initialize_IMU(current_impact_index)
-             # initialize_IMU(ImpactAccelero[current_impact_index],IMULocalisations[current_impact_index],traitementAccelerometre)
-             # Tab = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
-             # print(Tab[0].t)
-            foundPoint = finder.getPredictedPoint()
-            norm_Error = math.sqrt(math.pow((foundPoint[0]-finder.getRealPoint(current_impact_index)[0][0]),2)+math.pow((foundPoint[1]-finder.getRealPoint(current_impact_index)[1][0]),2))
+            initialize_IMU(ImpactAccelero[current_impact_index],IMULocalisations[current_impact_index],TRAITEMENT_ACCELEROMETRE)
+            match TYPE_OPTIMISATION:
+                case "Default":
+                    match TYPE_LOCALISATION:
+                        case "Trilateration" :
+                            match TYPE_TDA:
+                                case "SeuilNaif" :
+                                    res = sc.optimize.minimize(trilaterationMethodSeuilNaif, x0, bounds=b)
+                                case "CrossCorrelation" :
+                                    res = sc.optimize.minimize(trilaterationMethodCrossCorrelation, x0, bounds=b)
+                                case "SeuilEnveloppe" :
+                                    res = sc.optimize.minimize(trilaterationMethodSeuilEnveloppe, x0, bounds=b)
+                                case "NeuralNetwork" :
+                                    print("Not yet ... If ever")   
+                                case _ :
+                                    print("Cette méthode de calcul du TDA n'est pas valable.")
+                        case "NeuralNetwork" :
+                            print("Not yet ... If ever")
+                        case _ :
+                            print("Cette méthode de localisation n'est pas valable.")
+                case "Nelder-Mead" | "Powell" | "CG" | "BFGS" | "Newton-CG" | "L-BFGS-B" | "TNC" | "COBYLA" | "SLSQP" | "trust-constr" | "dogleg" | "trust-ncg" | "trust-exact" | "trust-krylov" :
+                    match TYPE_LOCALISATION:
+                        case "Trilateration" :
+                            match TYPE_TDA:
+                                case "SeuilNaif" :
+                                    res = sc.optimize.minimize(trilaterationMethodSeuilNaif, x0, bounds=b)
+                                case "CrossCorrelation" :
+                                    res = sc.optimize.minimize(trilaterationMethodCrossCorrelation, x0, bounds=b)
+                                case "SeuilEnveloppe" :
+                                    res = sc.optimize.minimize(trilaterationMethodSeuilEnveloppe, x0, bounds=b)
+                                case "NeuralNetwork" :
+                                    print("Not yet ... If ever")   
+                                case _ :
+                                    print("Cette méthode de calcul du TDA n'est pas valable.")
+                        case "NeuralNetwork" :
+                            print("Not yet ... If ever")
+                        case _ :
+                            print("Cette méthode de localisation n'est pas valable.")
+                case _:
+                    print("Cette méthode d'optimisation n'est pas valable.")
+
+            foundPoint = res.x
+            norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
             allNormErrors.append(norm_Error)
-            plotPoints(finder.getRealPoint(current_impact_index),foundPoint,current_impact_index)
+            plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
     
+ 
     # analysis(allNormErrors)
     # pred = Prediction("Trilateration", "CrossCorrelation")
     # pred.addData(allNormErrors)
