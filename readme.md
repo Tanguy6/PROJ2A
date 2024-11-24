@@ -36,16 +36,18 @@ Voici la découpe des différents objectifs.
 
 - [ ] Utilisation ergonomique de l'affichage
 
+- [ ] Vérification de la similitude entre donées par un test statistique
+
 ### Intégration
 
-- [ ] Intégrer les différentes méthodes au sein d'un seul code cohérent et simple d'usage
+- [X] Intégrer les différentes méthodes au sein d'un seul code cohérent et simple d'usage
 
 ## Paramètres de réglage implémentés
 
 - typeLocalisation
   - [X]  Trilateration
 - typeTdA
-  - [ ] SeuilNaif
+  - [X] SeuilNaif
   - [ ] CrossCorrelation
   - [ ] SeuilEnveloppe
   - [ ] TransforméeOndelette
@@ -56,7 +58,7 @@ Voici la découpe des différents objectifs.
   - [ ] Adaptatif ?
 - TraitementAccelerometre
   - [X] AxeZ
-  - [ ] Norme
+  - [X] Norme
 - dataSet
   - [ ] SautStage
   - [X] ImpactStage
