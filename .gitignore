@@ -1,3 +1,6 @@
 Data/
 NewData/
 #data.json
+classDefinition.py
+isotropicUnknownCelerityTraingulation.py
+peakMethods.py
