@@ -114,6 +114,30 @@ class dataVisualizer:
             print(pred.data)
             
             
+            
+    def isTwoPopulationstatisticallyDifferent(self, pop1, pop2):
+        # Moyennes
+        moyennePop1 = stat.mean(pop1)
+        moyennePop2 = stat.mean(pop2)
+        # Ecart-type
+        ecarttype1 = stat.stdev(pop1)
+        ecarttype2 = stat.stdev(pop2)
+        
+        # Nous allons realiser un Z test puisque nous avons plus de 30 samples
+        # voir la diapo 17 de ANOVA
+        
+        Z = (moyennePop1-moyennePop2)/(math.sqrt( ecarttype1 /len(pop1)+ecarttype2/len(pop2)))
+        
+        print(abs(Z))   
+        
+        
+        # On prend alpha = 0.05, et donc si abs(Z) plus grand que 1,96, on 
+        # rejete H0 (hypothese selon laquelle les populations sont les "memes")
+        # avec 5 % de conficance qu'elle soit juste sinon on l'accepte
+        
+        return abs(Z) > 1.96
+            
+            
     def compareData(self, typeLocTab, typeTdATab):
         length = len(typeLocTab)
         sortedData = [] 
@@ -394,25 +418,20 @@ def main():
     err = []
     
     
-    for current_impact_index in range(deb, deb+nb_impact):
-        # print(current_impact_index)
-        initialize_IMU(ImpactAccelero[current_impact_index],IMULocalisations[current_impact_index],TRAITEMENT_ACCELEROMETRE)
-        foundPoint = findPoint(ImpactAccelero[current_impact_index])
-        norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
-        plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
-        err.append(norm_Error)
+    # for current_impact_index in range(deb, deb+nb_impact):
+    #     # print(current_impact_index)
+    #     initialize_IMU(ImpactAccelero[current_impact_index],IMULocalisations[current_impact_index],TRAITEMENT_ACCELEROMETRE)
+    #     foundPoint = findPoint(ImpactAccelero[current_impact_index])
+    #     norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
+    #     plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
+    #     err.append(norm_Error)
         
         
-        
-        
+    dataVisu = dataVisualizer(JSON_FILE)
     
-    # print("Moyenne : ", np.mean(err))
-    # print("Max : ", np.max(err))
-    # print("Min : ", np.min(err))
-    # print("Ecart-type : ", np.std(err))
-    
-    # plt.figure()
-    # plt.hist(err, bins=100)
+    # dataVisu.compareData(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"])
+        
+    print(dataVisu.isTwoPopulationstatisticallyDifferent([1,4,5], [1,4,6]))
 
 
 if __name__ == "__main__":
