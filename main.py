@@ -8,6 +8,7 @@
 #######################################################
 
 import scipy as sc
+import scipy.stats as scstats
 import statistics as stat
 import matplotlib.pyplot as plt
 import numpy as np
@@ -72,14 +73,16 @@ class Prediction:
     # traitementAccelerometre : "AxeZ" , "Norme" 
     # dataSet : "SautStage" , "ImpactStage", "ToutStage" , "SautMiniProj" , "ImpactMiniProj" , "ToutMiniProj" , "Tout"
     
-    
     # Statique
     # Différence statistique : ANOVA
     
     
-    def __init__(self, paramTypeLocalisation, paramTypeTdA):
+    def __init__(self, paramTypeLocalisation, paramTypeTdA,paramTypeOptimisation, paramTraitementAccelerometre, paramDataSet):
         self.typeLocalisation = paramTypeLocalisation
         self.typeTdA = paramTypeTdA
+        self.typeOptimisation = paramTypeOptimisation
+        self.traitementAccelerometre = paramTraitementAccelerometre
+        self.dataSet = paramDataSet
         
     def addData(self,paramData):
         self.data = paramData
@@ -91,6 +94,9 @@ class Prediction:
         tempDict = {}
         tempDict["typeLocalisation"] = self.typeLocalisation
         tempDict["typeTdA"] = self.typeTdA
+        tempDict["typeOptimisation"] = self.typeOptimisation
+        tempDict["traitementAccelerometre"] = self.traitementAccelerometre
+        tempDict["dataSet"] = self.dataSet
         tempDict["data"] = self.data
         tempSuperDict["Predictions" + str(len(tempSuperDict)+1)]= tempDict
         with open(JSON_FILE, 'w') as f:
@@ -105,7 +111,7 @@ class dataVisualizer:
         # print(tempSuperDict)
         for prediction in tempSuperDict.values():
             # print(prediction)
-            self.predictions.append(Prediction(prediction["typeLocalisation"], prediction["typeTdA"]))
+            self.predictions.append(Prediction(prediction["typeLocalisation"], prediction["typeTdA"], prediction["typeOptimisation"], prediction["traitementAccelerometre"], prediction["dataSet"]))
             self.predictions[-1].addData(prediction["data"])
             
             
@@ -136,7 +142,72 @@ class dataVisualizer:
         # avec 5 % de conficance qu'elle soit juste sinon on l'accepte
         
         return abs(Z) > 1.96
+    
+    
+    
+    def anovaTest(self,typeLocTab, typeTdATab, typeOptimisationTab, traitementAccelerometreTab, dataSetTab):
+        # Nous allons faire un ANOVA pour toutes les données dont les paramètres 
+        # sont passés en paramètre, comme pour compaData.
+        
+        # Nous commençons par creer nos dataset tries
             
+        length = len(typeLocTab)
+        if not len(typeLocTab) == len(typeTdATab) == len(typeOptimisationTab) == len(traitementAccelerometreTab) == len(dataSetTab):
+            print("Tout les tableaux doivent avoir la même taille.")
+            return -1
+        
+        
+        sortedData = [] 
+        for i in range(0,length):
+            sortedData.append([])
+            for pred in self.predictions:
+                if pred.typeLocalisation == typeLocTab[i] and pred.typeTdA == typeTdATab[i] and pred.typeOptimisation == typeOptimisationTab[i] and pred.traitementAccelerometre == traitementAccelerometreTab[i] and pred.dataSet == dataSetTab[i]:
+                    sortedData[i].extend(pred.data)
+        for i in range(0,length):
+            print("Voici toutes les données de type " + typeLocTab[i] + " et " + typeTdATab[i] + " et " + typeOptimisationTab[i] + " et " + traitementAccelerometreTab[i] + " et " + dataSetTab[i])
+            # print(sortedData[i])
+
+        
+        
+        # On teste la normalité de chaque échantillon
+        # Si la p-value est supérieure à notre seuil de confiance (0,05)
+        # nous ne pouvons pas rejeter l'hypothèse nul donc les données
+        # sont normales
+        
+        for i in range(0,length):
+            if(scstats.shapiro(sortedData[i])[1] < 0.05):
+                print("Un des échantillons ne suit pas une loi normale.")
+                # return A remettre, la c'est juste pour tester la suite
+        
+        
+        # Une fois que nous sommes surs que nos echantillons sont normaux,
+        # nous faisons notre one way anova
+        if (scstats.f_oneway(*sortedData)[1] > 0.05):
+            print("On peut accepter l'hypothèse nulle avec une confiance de 5%.")
+            # return A remettre, la c'est juste pour tester la suite
+            
+        print("L'hypothèse nulle est rejetée, donc il y a une différence significative entre les echantillons.")    
+        
+        # S'il y a une différence statistiquement significative, on utilise un test post hoc pour savoir quel 
+        # couple pose souci
+        
+        res = scstats.tukey_hsd(*sortedData)
+        
+        
+        for i in range (0,length):
+            for j in range (i+1,length):
+                # print("(" + str(i) + ";" + str(j) + ")")
+                if res.pvalue[i,j] < 0.05: # S'ils sont significativement differents
+                    print("Les groupes " + str(i) + " et " + str(j) + " sont significativement différents.")
+                    
+        
+
+
+        
+
+
+
+        
             
     def compareData(self, typeLocTab, typeTdATab):
         length = len(typeLocTab)
@@ -429,9 +500,11 @@ def main():
         
     dataVisu = dataVisualizer(JSON_FILE)
     
+    dataVisu.anovaTest(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"], ["Default","Default"], ["Norme","Norme"], ["ImpactStage","ImpactStage"])
+    
     # dataVisu.compareData(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"])
         
-    print(dataVisu.isTwoPopulationstatisticallyDifferent([1,4,5], [1,4,6]))
+    # print(dataVisu.isTwoPopulationstatisticallyDifferent([1,4,5], [1,4,6]))
 
 
 if __name__ == "__main__":
