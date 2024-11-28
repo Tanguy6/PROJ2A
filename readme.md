@@ -36,7 +36,7 @@ Voici la découpe des différents objectifs.
 
 - [ ] Utilisation ergonomique de l'affichage
 
-- [ ] Vérification de la similitude entre donées par un test statistique
+- [X] Vérification de la similitude entre données par un test statistique (Shapiro, one way ANOVA, TukeyHSD)
 
 ### Intégration
 
