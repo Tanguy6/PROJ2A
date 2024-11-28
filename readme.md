@@ -28,6 +28,8 @@ Voici la découpe des différents objectifs.
 
 ### Traitement des données
 
+- [ ] Moyenner les positions des impacteur et/ou les positions statiques.
+
 - [x] Calcul de valeurs statistiques (Moyenne, Médiane, Écart-type)
 
 - [x] Sauvegarde des données dans un fichier pour traiter les différences entre méthodes
@@ -37,6 +39,7 @@ Voici la découpe des différents objectifs.
 - [ ] Utilisation ergonomique de l'affichage
 
 - [X] Vérification de la similitude entre données par un test statistique (Shapiro, one way ANOVA, TukeyHSD)
+
 
 ### Intégration
 
@@ -60,12 +63,22 @@ Voici la découpe des différents objectifs.
   - [X] AxeZ
   - [X] Norme
 - dataSet
-  - [ ] SautStage
-  - [X] ImpactStage
-  - [ ] ToutStage
-  - [ ] SautMiniProjet
-  - [ ] ImpactMiniProjet
-  - [ ] ToutMiniProjet
-  - [ ] Tout
+  - [ ] SurtapisSautStage
+  - [ ] SurtapisImpactStage
+  - [ ] SurtapisToutStage
+  - [ ] SurtapisSautMiniProjet
+  - [ ] SurtapisImpactMiniProjet
+  - [ ] SurtapisToutMiniProjet
+  - [ ] TapisSautStage
+  - [ ] TapisImpactStage
+  - [ ] TapisToutStage
+  - [ ] TapisSautMiniProjet
+  - [ ] TapisImpactMiniProjet
+  - [ ] TapisToutMiniProjet
+
+
+
+
+
 
 Ce document est voué à être modifié au fur et à mesure.

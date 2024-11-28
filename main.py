@@ -71,10 +71,9 @@ class Prediction:
     # typeOptimisation : "Nelder-Mead" , "" 
     # valeurSeuil : int
     # traitementAccelerometre : "AxeZ" , "Norme" 
-    # dataSet : "SautStage" , "ImpactStage", "ToutStage" , "SautMiniProj" , "ImpactMiniProj" , "ToutMiniProj" , "Tout"
+    # dataSet : "SurtapisSautStage" , "SurtapisImpactStage", "SurtapisToutStage" , "SurtapisSautMiniProj" , "SurtapisImpactMiniProj" , "SurtapisToutMiniProj" , "SurtapisTout", "TapisSautStage" , "TapisImpactStage", "TapisToutStage" , "TapisSautMiniProj" , "TapisImpactMiniProj" , "TapisToutMiniProj" , "TapisTout"
     
     # Statique
-    # Différence statistique : ANOVA
     
     
     def __init__(self, paramTypeLocalisation, paramTypeTdA,paramTypeOptimisation, paramTraitementAccelerometre, paramDataSet):
@@ -466,20 +465,30 @@ def findPoint(CurrentImpactAccelero):
 
 def main():
     match DATA_SET:
-        case "SautStage":
-            print("Pas implémenté.")
-        case "ImpactStage":
-            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/impacteur_accelero.npy"),np.load("Data/impacteur_localisation.npy"),np.load("Data/impacteur_pos_accelero.npy"))
-        case "ToutStage":
-            print("Pas implémenté.")
-        case "SautMiniProj":
-            print("Pas implémenté.")
-        case "ImpactMiniProj":
-            print("Pas implémenté.")
-        case "ToutMiniProj":
-            print("Pas implémenté.")
-        case "Tout":
-            print("Pas implémenté.")
+        case "SurtapisSautStage":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/surtapis/saut/sauts_accelero_set1.npy"),np.load("Data/surtapis/saut/sauts_localisation_set1.npy"),np.load("Data/surtapis/saut/sauts_pos_accelero_set1.npy"))
+        case "SurtapisImpactStage":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/surtapis/impacteur/impacteur_accelero_set1.npy"),np.load("Data/surtapis/impacteur/impacteur_localisation_set1.npy"),np.load("Data/surtapis/impacteur/impacteur_pos_accelero_set1.npy"))
+        case "SurtapisToutStage":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/surtapis/complet/data set_accelero_set1.npy"),np.load("Data/surtapis/complet/data set_localisation_set1.npy"),np.load("Data/surtapis/complet/data set_pos_accelero_set1.npy"))
+        case "SurtapisSautMiniProj":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/surtapis/saut/sauts_accelero_set2.npy"),np.load("Data/surtapis/saut/sauts_localisation_set2.npy"),np.load("Data/surtapis/saut/sauts_pos_accelero_set2.npy"))
+        case "SurtapisImpactMiniProj":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/surtapis/impacteur/impacteur_accelero_set2.npy"),np.load("Data/surtapis/impacteur/impacteur_localisation_set2.npy"),np.load("Data/surtapis/impacteur/impacteur_pos_accelero_set2.npy"))
+        case "SurtapisToutMiniProj":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/surtapis/complet/data set_accelero_set2.npy"),np.load("Data/surtapis/complet/data set_localisation_set2.npy"),np.load("Data/surtapis/complet/data set_pos_accelero_set2.npy"))
+        case "TapisSautStage":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/tapis/sauts/sauts_accelero_set1.npy"),np.load("Data/tapis/sauts/sauts_localisation_set1.npy"),np.load("Data/tapis/sauts/sauts_pos_accelero_set1.npy"))
+        case "TapisImpactStage":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/tapis/impacteur/impacteur_accelero_set1.npy"),np.load("Data/tapis/impacteur/impacteur_localisation_set1.npy"),np.load("Data/tapis/impacteur/impacteur_pos_accelero_set1.npy"))
+        case "TapisToutStage":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/tapis/complet/data set_accelero_set1.npy"),np.load("Data/tapis/complet/data set_localisation_set1.npy"),np.load("Data/tapis/complet/data set_pos_accelero_set1.npy"))
+        case "TapisSautMiniProj":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/tapis/sauts/sauts_accelero_set2.npy"),np.load("Data/tapis/sauts/sauts_localisation_set2.npy"),np.load("Data/tapis/sauts/sauts_pos_accelero_set2.npy"))
+        case "TapisImpactMiniProj":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/tapis/impacteur/impacteur_accelero_set2.npy"),np.load("Data/tapis/impacteur/impacteur_localisation_set2.npy"),np.load("Data/tapis/impacteur/impacteur_pos_accelero_set2.npy"))
+        case "TapisToutMiniProj":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/tapis/complet/data set_accelero_set2.npy"),np.load("Data/tapis/complet/data set_localisation_set2.npy"),np.load("Data/tapis/complet/data set_pos_accelero_set2.npy"))
         case _:
             print("Ce dataset n'est pas valable.") 
     
