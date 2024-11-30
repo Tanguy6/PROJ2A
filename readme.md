@@ -14,7 +14,7 @@ Voici la découpe des différents objectifs.
 
 - [x] Trilatération de Kundu et al.
   
-  *À compléter* 
+- [ ] Réseau de neurones 
 
 ### Méthodes de calcul des différences des temps d'arrivée
 
@@ -28,7 +28,7 @@ Voici la découpe des différents objectifs.
 
 ### Traitement des données
 
-- [ ] Moyenner les positions des impacteur et/ou les positions statiques.
+- [X] Moyenner les positions des impacteur et/ou les positions statiques.
 
 - [x] Calcul de valeurs statistiques (Moyenne, Médiane, Écart-type)
 
@@ -51,7 +51,7 @@ Voici la découpe des différents objectifs.
   - [X]  Trilateration
 - typeTdA
   - [X] SeuilNaif
-  - [ ] CrossCorrelation
+  - [X] CrossCorrelation
   - [ ] SeuilEnveloppe
   - [ ] TransforméeOndelette
 - typeOptimisation
@@ -63,18 +63,21 @@ Voici la découpe des différents objectifs.
   - [X] AxeZ
   - [X] Norme
 - dataSet
-  - [ ] SurtapisSautStage
-  - [ ] SurtapisImpactStage
-  - [ ] SurtapisToutStage
-  - [ ] SurtapisSautMiniProjet
-  - [ ] SurtapisImpactMiniProjet
-  - [ ] SurtapisToutMiniProjet
-  - [ ] TapisSautStage
-  - [ ] TapisImpactStage
-  - [ ] TapisToutStage
-  - [ ] TapisSautMiniProjet
-  - [ ] TapisImpactMiniProjet
-  - [ ] TapisToutMiniProjet
+  - [X] SurtapisSautStage
+  - [X] SurtapisImpactStage
+  - [X] SurtapisToutStage
+  - [X] SurtapisSautMiniProjet
+  - [X] SurtapisImpactMiniProjet
+  - [X] SurtapisStatiqueImpactMiniProjet
+  - [X] SurtapisToutMiniProjet
+  - [X] TapisSautStage
+  - [X] TapisImpactStage
+  - [X] TapisToutStage
+  - [X] TapisSautMiniProjet
+  - [X] TapisStatiqueSautMiniProjet
+  - [X] TapisImpactMiniProjet
+  - [X] TapisStatiqueImpactMiniProjet
+  - [X] TapisToutMiniProjet
 
 
 
