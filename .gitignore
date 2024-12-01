@@ -1,5 +1,6 @@
 Data/
 NewData/
+Rapport/
 #data.json
 classDefinition.py
 isotropicUnknownCelerityTraingulation.py
