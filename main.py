@@ -37,7 +37,7 @@ TRAITEMENT_ACCELEROMETRE = "Norme"
 # "SurtapisTout", "TapisSautStage" , "TapisImpactStage", "TapisToutStage" , 
 # "TapisSautMiniProj" , "TapisImpactMiniProj" , "TapisToutMiniProj" , "TapisTout"
 # "TapisStatiqueSautMiniProj" , "TapisStatiqueImpactMiniProj" , "SurtapisStatiqueImpactMiniProj" 
-DATA_SET = "TapisSautMiniProj"
+DATA_SET = "TapisSautStage"
 
 
 #######################################################
@@ -80,8 +80,6 @@ class Prediction:
     # "SurtapisTout", "TapisSautStage" , "TapisImpactStage", "TapisToutStage" , 
     # "TapisSautMiniProj" , "TapisImpactMiniProj" , "TapisToutMiniProj" , "TapisTout"
     # "TapisStatiqueSautMiniProj" , "TapisStatiqueImpactMiniProj" , "SurtapisStatiqueImpactMiniProj" 
-     
-    # Statique
     
     
     def __init__(self, paramTypeLocalisation, paramTypeTdA,paramTypeOptimisation, paramTraitementAccelerometre, paramDataSet):
@@ -558,28 +556,35 @@ def main():
         case _:
             print("Ce dataset n'est pas valable.") 
             
-    nb_impact = 10
+    nb_impact = len(ImpactAccelero)
     deb = 0
     
     err = []
 
-    initialize_IMU_Spatial(IMULocalisations)
-    for current_impact_index in range(deb, deb+nb_impact):
-        print(current_impact_index)
-        initialize_IMU_Temporel(ImpactAccelero[current_impact_index],TRAITEMENT_ACCELEROMETRE)
-        foundPoint = findPoint(ImpactAccelero[current_impact_index])
-        norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
-        differentiateSupposedAndTrueIMUsOrder(ImpactLocalisation[current_impact_index][0][0],ImpactLocalisation[current_impact_index][1][0])
-        if norm_Error > 3:
-            print("Erreur dans le calcul de la norme.")
-        else :    
-            plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
-            err.append(norm_Error)
+    # initialize_IMU_Spatial(IMULocalisations)
+    # for current_impact_index in range(deb, deb+nb_impact):
+    #     print(current_impact_index)
+    #     initialize_IMU_Temporel(ImpactAccelero[current_impact_index],TRAITEMENT_ACCELEROMETRE)
+    #     foundPoint = findPoint(ImpactAccelero[current_impact_index])
+    #     norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
+    #     # differentiateSupposedAndTrueIMUsOrder(ImpactLocalisation[current_impact_index][0][0],ImpactLocalisation[current_impact_index][1][0])
+    #     if norm_Error > 3:
+    #         print("Erreur dans le calcul de la norme.")
+    #     else :    
+    #         # plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
+    #         err.append(norm_Error)
         
         
-    # dataVisu = dataVisualizer(JSON_FILE)
+    dataVisu = dataVisualizer(JSON_FILE)
     
-    # dataVisu.anovaTest(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"], ["Default","Default"], ["Norme","Norme"], ["ImpactStage","ImpactStage"])
+    
+    # prediction = Prediction(TYPE_LOCALISATION, TYPE_TDA, TYPE_OPTIMISATION, TRAITEMENT_ACCELEROMETRE, DATA_SET)
+    
+    # prediction.addData(err)
+    
+    # prediction.saveToJson()
+    
+    dataVisu.anovaTest(["Trilateration","Trilateration"], ["SeuilNaif","SeuilNaif"], ["Default","Default"], ["Norme","Norme"], ["TapisSautStage","TapisSautMiniProj"])
     
     # dataVisu.compareData(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"])
         
