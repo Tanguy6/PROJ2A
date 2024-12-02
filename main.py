@@ -290,7 +290,8 @@ def trilaterationMethodSeuilNaif(coordonates): # Fonction à minimiser tirée de
                     toRet += math.pow(  tij(Tab[i],Tab[j])*(di(Imu9, Tab[k]) - di(Imu9, Tab[l])) - tij(Tab[k],Tab[l])*(di(Imu9, Tab[i]) - di(Imu9, Tab[j])) ,2)
     return toRet
 
-def trilaterationMethodCrossCorrelation(coordonates): # Fonction à minimiser tirée de la revue de Kundu et al.
+def trilaterationMethodCrossCorrelation(coordonates): 
+    Tab = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
     Imu9 = IMU(coordonates[0], coordonates[1], 0)
     toRet = 0
     for i in range(0, n-1):
@@ -301,6 +302,7 @@ def trilaterationMethodCrossCorrelation(coordonates): # Fonction à minimiser ti
     return toRet
 
 def trilaterationMethodSeuilEnveloppe(coordonates): # Fonction à minimiser tirée de la revue de Kundu et al.
+    Tab = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
     Imu9 = IMU(coordonates[0], coordonates[1], 0)
     toRet = 0
     for i in range(0, n-1):
@@ -311,6 +313,7 @@ def trilaterationMethodSeuilEnveloppe(coordonates): # Fonction à minimiser tir�
     return toRet
 
 def trilaterationMethodTransforméeOndelette(coordonates): # Fonction à minimiser tirée de la revue de Kundu et al.
+    Tab = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
     Imu9 = IMU(coordonates[0], coordonates[1], 0)
     toRet = 0
     for i in range(0, n-1):
@@ -431,8 +434,8 @@ def initialize_IMU_Spatial(IMULocalisations):
         Imu8.y = np.mean(IMULocalisations[:,7,1])
 
 def plotPoints(knownPoint,foundPoint,i): 
-    plt.plot(foundPoint[1],foundPoint[0],'rx',label=f"found point {i}")
-    plt.plot(knownPoint[1],knownPoint[0],'bx',label="known point")
+    plt.plot(foundPoint[0],foundPoint[1],'rx',label=f"found point {i}")
+    plt.plot(knownPoint[0],knownPoint[1],'bx',label="known point")
     plt.ylim(-0.1,1.9)
     plt.xlim(-0.1,1.9)
     plt.legend(loc="upper left")
@@ -493,6 +496,32 @@ def findPoint(CurrentImpactAccelero):
             print("Cette méthode d'optimisation n'est pas valable.")
     return res.x
 
+def differentiateSupposedAndTrueIMUsOrder(knownPointx,knownPointy):
+    Tab = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
+    Imu9 = IMU(knownPointx, knownPointy, 0)
+    d1 = di(Imu9, Tab[0])
+    d2 = di(Imu9, Tab[1])
+    d3 = di(Imu9, Tab[2])
+    d4 = di(Imu9, Tab[3])
+    d5 = di(Imu9, Tab[4])
+    d6 = di(Imu9, Tab[5])
+    d7 = di(Imu9, Tab[6])
+    d8 = di(Imu9, Tab[7])
+    
+    TabDi = [d1,d2,d3,d4,d5,d6,d7,d8]
+    
+    ind_tri_distance = np.argsort(TabDi)
+    
+    TabTi = [Imu1.t,Imu2.t,Imu3.t,Imu4.t,Imu5.t,Imu6.t,Imu7.t,Imu8.t]
+    
+    ind_tri_tmps = np.argsort(TabTi)
+    
+    print("Tri distance")
+    print(ind_tri_distance)
+    print("Tri temps")
+    print(ind_tri_tmps)
+    print("-----")    
+
 
 def main():
     match DATA_SET:
@@ -536,12 +565,16 @@ def main():
 
     initialize_IMU_Spatial(IMULocalisations)
     for current_impact_index in range(deb, deb+nb_impact):
-        # print(current_impact_index)
+        print(current_impact_index)
         initialize_IMU_Temporel(ImpactAccelero[current_impact_index],TRAITEMENT_ACCELEROMETRE)
         foundPoint = findPoint(ImpactAccelero[current_impact_index])
         norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
-        plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
-        err.append(norm_Error)
+        differentiateSupposedAndTrueIMUsOrder(ImpactLocalisation[current_impact_index][0][0],ImpactLocalisation[current_impact_index][1][0])
+        if norm_Error > 3:
+            print("Erreur dans le calcul de la norme.")
+        else :    
+            plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
+            err.append(norm_Error)
         
         
     # dataVisu = dataVisualizer(JSON_FILE)
