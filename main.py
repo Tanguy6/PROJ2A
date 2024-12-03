@@ -15,6 +15,7 @@ import numpy as np
 import time
 import math
 import json
+import scikit_posthocs as sp
 
 #######################################################
 #                    Constantes
@@ -179,32 +180,58 @@ class dataVisualizer:
         # nous ne pouvons pas rejeter l'hypothèse nul donc les données
         # sont normales
         
+        flagNormality = True
+        
         for i in range(0,length):
             if(scstats.shapiro(sortedData[i])[1] < 0.05):
-                print("Un des échantillons ne suit pas une loi normale.")
-                # return A remettre, la c'est juste pour tester la suite
+                print("Un des échantillons ne suit pas une loi normale. \nNous passons alors par le test de Kruskal Wallis.")
+                flagNormality = False
+                break
         
-        
-        # Une fois que nous sommes surs que nos echantillons sont normaux,
-        # nous faisons notre one way anova
-        if (scstats.f_oneway(*sortedData)[1] > 0.05):
-            print("On peut accepter l'hypothèse nulle avec une confiance de 5%.")
-            # return A remettre, la c'est juste pour tester la suite
+        if (flagNormality):
             
-        print("L'hypothèse nulle est rejetée, donc il y a une différence significative entre les echantillons.")    
-        
-        # S'il y a une différence statistiquement significative, on utilise un test post hoc pour savoir quel 
-        # couple pose souci
-        
-        res = scstats.tukey_hsd(*sortedData)
-        
-        
-        for i in range (0,length):
-            for j in range (i+1,length):
-                # print("(" + str(i) + ";" + str(j) + ")")
-                if res.pvalue[i,j] < 0.05: # S'ils sont significativement differents
-                    print("Les groupes " + str(i) + " et " + str(j) + " sont significativement différents.")
-                    
+            # Une fois que nous sommes surs que nos echantillons sont normaux,
+            # nous faisons notre one way anova
+            if (scstats.f_oneway(*sortedData)[1] > 0.05):
+                print("On peut accepter l'hypothèse nulle avec une confiance de 5%.")
+                return
+                
+            print("L'hypothèse nulle est rejetée, donc il y a une différence significative entre les echantillons.")    
+            
+            # S'il y a une différence statistiquement significative, on utilise un test post hoc pour savoir quel 
+            # couple pose souci
+            
+            res = scstats.tukey_hsd(*sortedData)
+            
+            
+            for i in range (0,length):
+                for j in range (i+1,length):
+                    # print("(" + str(i) + ";" + str(j) + ")")
+                    if res.pvalue[i,j] < 0.05: # S'ils sont significativement differents
+                        print("Les groupes " + str(i) + " et " + str(j) + " sont significativement différents.")
+        else:
+            
+            # Si la loi suivie n'est pas normale, il faut alors réaliser un test
+            # de Kruskal Wallis, suivi d'un test post-hoc de Dunn
+            
+            if (scstats.kruskal(*sortedData)[1] > 0.05):
+                print("On peut accepter l'hypothèse nulle avec une confiance de 5%.")
+                return 
+                
+            print("L'hypothèse nulle est rejetée, donc il y a une différence significative entre les echantillons.")    
+            
+            # S'il y a une différence statistiquement significative, on utilise un test post hoc pour savoir quel 
+            # couple pose souci
+            
+            p_values = sp.posthoc_dunn(sortedData, p_adjust='holm')
+
+            
+            for i in range (0,length):
+                for j in range (i+1,length):
+                    # print("(" + str(i) + ";" + str(j) + ")")
+                    if p_values.loc[i+1,j+1] < 0.05: # S'ils sont significativement differents
+                        print("Les groupes " + str(i) + " et " + str(j) + " sont significativement différents.")
+            
         
 
 
