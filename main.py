@@ -17,7 +17,7 @@ import math
 import json
 import scikit_posthocs as sp
 import difflib as dfl
-
+import sys
 
 #######################################################
 #                    Constantes
@@ -354,6 +354,8 @@ def trilaterationMethodTransforméeOndelette(coordonates): # Fonction à minimis
     return toRet
 
 ######### Fonctions autres
+def printDatasete():
+    print(DATA_SET)
 
 def initialize_IMU_Temporel(CurrentImpactAccelero,traitementAccelerometreParam):  
     match traitementAccelerometreParam:
@@ -485,6 +487,7 @@ def analysis(tabValue):
 def findPoint(CurrentImpactAccelero): 
     x0 = [1,1]
     b=((-0.1,1.9), (-0.1,1.9))
+    print(TYPE_LOCALISATION)
     match TYPE_OPTIMISATION:
         case "Default":
             match TYPE_LOCALISATION:
@@ -639,9 +642,9 @@ def main():
             foundPoints.append([foundPoint[0],foundPoint[1]])
         
         
-    # dataVisu = dataVisualizer(JSON_FILE)
-    # print(foundPoints[:][1])
-    plotAllFoundAndKnownPoints(foundPoints,ImpactLocalisation)
+    # # dataVisu = dataVisualizer(JSON_FILE)
+    # # print(foundPoints[:][1])
+    # plotAllFoundAndKnownPoints(foundPoints,ImpactLocalisation)
     # prediction = Prediction(TYPE_LOCALISATION, TYPE_TDA, TYPE_OPTIMISATION, TRAITEMENT_ACCELEROMETRE, DATA_SET)
     
     # prediction.addData(err)
@@ -657,9 +660,23 @@ def main():
     # dataVisu.compareData(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"])
         
     # print(dataVisu.isTwoPopulationstatisticallyDifferent([1,4,5], [1,4,6]))
+    
+
+    print('argument list', sys.argv)
+    
 
 
 if __name__ == "__main__":
     t = time.time()
+    
+    # On réaffecte les constantes avec les arguments passés lors de l'appel, s'il y en a 
+    if len(sys.argv) > 3:
+        TYPE_LOCALISATION = sys.argv[1]
+        TYPE_TDA = sys.argv[2]
+        TYPE_OPTIMISATION = sys.argv[3]
+        VALEUR_SEUIL = int(sys.argv[4])
+        TRAITEMENT_ACCELEROMETRE = sys.argv[5]
+        DATA_SET = sys.argv[6]
+
     main()
     print("Temps d'execution': " + str(time.time() - t))
