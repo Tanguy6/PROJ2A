@@ -1,6 +1,7 @@
 Data/
 NewData/
 Rapport/
+Images/
 #data.json
 classDefinition.py
 isotropicUnknownCelerityTraingulation.py

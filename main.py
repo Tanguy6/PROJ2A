@@ -41,6 +41,10 @@ TRAITEMENT_ACCELEROMETRE = "Norme"
 # "TapisSautMiniProj" , "TapisImpactMiniProj" , "TapisToutMiniProj" , "TapisTout"
 # "TapisStatiqueSautMiniProj" , "TapisStatiqueImpactMiniProj" , "SurtapisStatiqueImpactMiniProj" 
 DATA_SET = "TapisSautStage"
+SHOW_FIGURES = True
+IMAGE_PATH = ""
+
+
 
 
 #######################################################
@@ -85,10 +89,11 @@ class Prediction:
     # "TapisStatiqueSautMiniProj" , "TapisStatiqueImpactMiniProj" , "SurtapisStatiqueImpactMiniProj" 
     
     
-    def __init__(self, paramTypeLocalisation, paramTypeTdA,paramTypeOptimisation, paramTraitementAccelerometre, paramDataSet):
+    def __init__(self, paramTypeLocalisation, paramTypeTdA,paramTypeOptimisation, paramValeurSeuil, paramTraitementAccelerometre, paramDataSet):
         self.typeLocalisation = paramTypeLocalisation
         self.typeTdA = paramTypeTdA
         self.typeOptimisation = paramTypeOptimisation
+        self.valeurSeuil = paramValeurSeuil
         self.traitementAccelerometre = paramTraitementAccelerometre
         self.dataSet = paramDataSet
         
@@ -102,7 +107,11 @@ class Prediction:
         plt.scatter(self.data,self.dataRatio)
         plt.xlabel("Erreur en norme")
         plt.ylabel("Ratio de ressemblance")
-        plt.show()
+        if SHOW_FIGURES:
+            plt.show()
+        else:
+            plt.savefig(IMAGE_PATH + '/ratioVerror.png',bbox_inches='tight', dpi = 500 )
+            plt.close()
     
     def saveToJson(self):
         tempSuperDict = {}
@@ -112,6 +121,7 @@ class Prediction:
         tempDict["typeLocalisation"] = self.typeLocalisation
         tempDict["typeTdA"] = self.typeTdA
         tempDict["typeOptimisation"] = self.typeOptimisation
+        tempDict["valeurSeuil"] = self.valeurSeuil
         tempDict["traitementAccelerometre"] = self.traitementAccelerometre
         tempDict["dataSet"] = self.dataSet
         tempDict["data"] = self.data
@@ -129,8 +139,9 @@ class dataVisualizer:
         # print(tempSuperDict)
         for prediction in tempSuperDict.values():
             # print(prediction)
-            self.predictions.append(Prediction(prediction["typeLocalisation"], prediction["typeTdA"], prediction["typeOptimisation"], prediction["traitementAccelerometre"], prediction["dataSet"]))
+            self.predictions.append(Prediction(prediction["typeLocalisation"], prediction["typeTdA"], prediction["typeOptimisation"], prediction["valeurSeuil"], prediction["traitementAccelerometre"], prediction["dataSet"]))
             self.predictions[-1].addData(prediction["data"])
+            self.predictions[-1].addData(prediction["dataRatio"])
             
             
     def showData(self):
@@ -181,8 +192,8 @@ class dataVisualizer:
             for pred in self.predictions:
                 if pred.typeLocalisation == typeLocTab[i] and pred.typeTdA == typeTdATab[i] and pred.typeOptimisation == typeOptimisationTab[i] and pred.traitementAccelerometre == traitementAccelerometreTab[i] and pred.dataSet == dataSetTab[i]:
                     sortedData[i].extend(pred.data)
-        for i in range(0,length):
-            print("Voici toutes les données de type " + typeLocTab[i] + " et " + typeTdATab[i] + " et " + typeOptimisationTab[i] + " et " + traitementAccelerometreTab[i] + " et " + dataSetTab[i])
+        # for i in range(0,length):
+            # print("Voici toutes les données de type " + typeLocTab[i] + " et " + typeTdATab[i] + " et " + typeOptimisationTab[i] + " et " + traitementAccelerometreTab[i] + " et " + dataSetTab[i])
             # print(sortedData[i])
 
         
@@ -354,8 +365,6 @@ def trilaterationMethodTransforméeOndelette(coordonates): # Fonction à minimis
     return toRet
 
 ######### Fonctions autres
-def printDatasete():
-    print(DATA_SET)
 
 def initialize_IMU_Temporel(CurrentImpactAccelero,traitementAccelerometreParam):  
     match traitementAccelerometreParam:
@@ -471,7 +480,11 @@ def plotPoints(knownPoint,foundPoint,i):
     plt.ylim(-0.1,1.9)
     plt.xlim(-0.1,1.9)
     plt.legend(loc="upper left")
-    plt.show()
+    if SHOW_FIGURES:
+        plt.show()
+    else:
+        plt.savefig(IMAGE_PATH + f"/plotPoints{i}.png",bbox_inches='tight', dpi = 500 )
+        plt.close()
     
 def analysis(tabValue):
     print("Moyenne : " + str(stat.mean(tabValue)))
@@ -487,7 +500,6 @@ def analysis(tabValue):
 def findPoint(CurrentImpactAccelero): 
     x0 = [1,1]
     b=((-0.1,1.9), (-0.1,1.9))
-    print(TYPE_LOCALISATION)
     match TYPE_OPTIMISATION:
         case "Default":
             match TYPE_LOCALISATION:
@@ -538,12 +550,16 @@ def plotAllFoundAndKnownPoints(foundPoints,KnownPoints):
     knownPointsAllX = [item[0][0] for item in KnownPoints]
     knownPointsAllY = [item[1][0] for item in KnownPoints]
     
-    plt.scatter(foundPointsAllX,foundPointsAllY,color = 'r',marker = 'x', label = "Points trouvés")
-    plt.scatter(knownPointsAllX,knownPointsAllY,color = 'b',marker = 'x', label = "Points connus")
+    plt.scatter(foundPointsAllX,foundPointsAllY,color = 'r',marker = 'x' )
+    plt.scatter(knownPointsAllX,knownPointsAllY,color = 'b',marker = 'x' )
     plt.ylim(-0.1,1.9)
     plt.xlim(-0.1,1.9)
-    plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
-    plt.show()
+    plt.legend(["Points trouvés","Points connus"],bbox_to_anchor=(1.05, 1.0), loc='upper left')
+    if SHOW_FIGURES:
+        plt.show()
+    else:
+        plt.savefig(IMAGE_PATH + '/comparaisonToutPoint.png',bbox_inches='tight', dpi = 500 )
+        plt.close()
 
 
 def differentiateSupposedAndTrueIMUsOrder(knownPointx,knownPointy):
@@ -573,13 +589,13 @@ def differentiateSupposedAndTrueIMUsOrder(knownPointx,knownPointy):
     matcher = dfl.SequenceMatcher(None,ind_tri_distance,ind_tri_tmps)
     
     
-    print("Tri distance")
-    print(ind_tri_distance)
-    print("Tri temps")
-    print(ind_tri_tmps)
-    print("Ratio des deux séquences")
-    print(matcher.ratio())
-    print("-----")    
+    # print("Tri distance")
+    # print(ind_tri_distance)
+    # print("Tri temps")
+    # print(ind_tri_tmps)
+    # print("Ratio des deux séquences")
+    # print(matcher.ratio())
+    # print("-----")    
     return matcher.ratio()
 
 
@@ -626,40 +642,45 @@ def main():
     
     foundPoints = []
 
-    initialize_IMU_Spatial(IMULocalisations)
-    for current_impact_index in range(deb, deb+nb_impact):
-        print(current_impact_index)
-        initialize_IMU_Temporel(ImpactAccelero[current_impact_index],TRAITEMENT_ACCELEROMETRE)
-        foundPoint = findPoint(ImpactAccelero[current_impact_index])
-        norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
+    # Partie a decommenter pour faire les calculs
+
+
+    # initialize_IMU_Spatial(IMULocalisations)
+    # for current_impact_index in range(deb, deb+nb_impact):
+    #     # print(current_impact_index)
+    #     initialize_IMU_Temporel(ImpactAccelero[current_impact_index],TRAITEMENT_ACCELEROMETRE)
+    #     foundPoint = findPoint(ImpactAccelero[current_impact_index])
+    #     norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
+    #     print(current_impact_index)
+    #     if norm_Error > 3:
+    #         print("Erreur dans le calcul de la norme.")
+    #     else :    
+    #         plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
+    #         ratio.append(differentiateSupposedAndTrueIMUsOrder(ImpactLocalisation[current_impact_index][0][0],ImpactLocalisation[current_impact_index][1][0]))
+    #         err.append(norm_Error)
+    #         foundPoints.append([foundPoint[0],foundPoint[1]])
         
-        if norm_Error > 3:
-            print("Erreur dans le calcul de la norme.")
-        else :    
-            plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
-            ratio.append(differentiateSupposedAndTrueIMUsOrder(ImpactLocalisation[current_impact_index][0][0],ImpactLocalisation[current_impact_index][1][0]))
-            err.append(norm_Error)
-            foundPoints.append([foundPoint[0],foundPoint[1]])
         
-        
-    # # dataVisu = dataVisualizer(JSON_FILE)
-    # # print(foundPoints[:][1])
     # plotAllFoundAndKnownPoints(foundPoints,ImpactLocalisation)
-    # prediction = Prediction(TYPE_LOCALISATION, TYPE_TDA, TYPE_OPTIMISATION, TRAITEMENT_ACCELEROMETRE, DATA_SET)
+    
+    # prediction = Prediction(TYPE_LOCALISATION, TYPE_TDA, TYPE_OPTIMISATION, VALEUR_SEUIL, TRAITEMENT_ACCELEROMETRE, DATA_SET)
     
     # prediction.addData(err)
     
     # prediction.addDataRatio(ratio)
     
-    # prediction.ratioVsError()
-    
     # prediction.saveToJson()
+
+    # Partie a decommenter pour faire de la comparaison
     
-    # dataVisu.anovaTest(["Trilateration","Trilateration"], ["SeuilNaif","SeuilNaif"], ["Default","Default"], ["Norme","Norme"], ["TapisSautStage","TapisSautMiniProj"])
+    
+    dataVisu = dataVisualizer(JSON_FILE)
+    # # print(foundPoints[:][1])
+    dataVisu.anovaTest(["Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration"], ["SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif"], ["Default", "Nelder-Mead" , "Powell" , "CG" , "BFGS" , "Newton-CG" , "L-BFGS-B" , "TNC" , "COBYLA" , "SLSQP" , "trust-constr" , "dogleg" , "trust-ncg" , "trust-exact" , "trust-krylov"], ["Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme"], ["TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage"])
     
     # dataVisu.compareData(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"])
         
-    # print(dataVisu.isTwoPopulationstatisticallyDifferent([1,4,5], [1,4,6]))
+    # print(dataVisu.isTwoPopulationstatisticallyDifferent([1,¨4,5], [1,4,6]))
     
 
     print('argument list', sys.argv)
@@ -674,9 +695,12 @@ if __name__ == "__main__":
         TYPE_LOCALISATION = sys.argv[1]
         TYPE_TDA = sys.argv[2]
         TYPE_OPTIMISATION = sys.argv[3]
-        VALEUR_SEUIL = int(sys.argv[4])
+        VALEUR_SEUIL = float(sys.argv[4])
         TRAITEMENT_ACCELEROMETRE = sys.argv[5]
         DATA_SET = sys.argv[6]
+        SHOW_FIGURES = False
+        IMAGE_PATH = "Images/" + TYPE_LOCALISATION + "_" + TYPE_TDA + "_"  + TYPE_OPTIMISATION + "_"  + str(VALEUR_SEUIL) + "_"  + TRAITEMENT_ACCELEROMETRE + "_" + DATA_SET
+        
 
     main()
     print("Temps d'execution': " + str(time.time() - t))

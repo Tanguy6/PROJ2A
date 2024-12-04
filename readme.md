@@ -38,12 +38,15 @@ Voici la découpe des différents objectifs.
 
 - [ ] Utilisation ergonomique de l'affichage
 
-- [X] Vérification de la similitude entre données par un test statistique (Shapiro, one way ANOVA, TukeyHSD)
+- [X] Vérification de la similitude entre données par un test statistique (Shapiro, one way ANOVA, TukeyHSD, Kruskal Wallis, Dunn)
 
 
 ### Intégration
 
 - [X] Intégrer les différentes méthodes au sein d'un seul code cohérent et simple d'usage
+
+- [ ] Mise en place d'un script bash pour automatiser les lancements de différents paramètres
+
 
 ## Paramètres de réglage implémentés
 
@@ -80,7 +83,11 @@ Voici la découpe des différents objectifs.
   - [X] TapisToutMiniProjet
 
 
+## Résultats
 
+### Type optimisation
+
+Les différents type d'optimisation et le test de Kruskal Wallis montre que les résultats sont similaires avec un seuil de confiance de 5%. Nous resterons donc sur la méthode **Default**.
 
 
 
