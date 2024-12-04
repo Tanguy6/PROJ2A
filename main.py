@@ -16,6 +16,8 @@ import time
 import math
 import json
 import scikit_posthocs as sp
+import difflib as dfl
+
 
 #######################################################
 #                    Constantes
@@ -93,6 +95,15 @@ class Prediction:
     def addData(self,paramData):
         self.data = paramData
         
+    def addDataRatio(self,paramDataRatio):
+        self.dataRatio = paramDataRatio
+        
+    def ratioVsError(self):
+        plt.scatter(self.data,self.dataRatio)
+        plt.xlabel("Erreur en norme")
+        plt.ylabel("Ratio de ressemblance")
+        plt.show()
+    
     def saveToJson(self):
         tempSuperDict = {}
         with open(JSON_FILE) as f:
@@ -104,6 +115,7 @@ class Prediction:
         tempDict["traitementAccelerometre"] = self.traitementAccelerometre
         tempDict["dataSet"] = self.dataSet
         tempDict["data"] = self.data
+        tempDict["dataRatio"] = self.dataRatio
         tempSuperDict["Predictions" + str(len(tempSuperDict)+1)]= tempDict
         with open(JSON_FILE, 'w') as f:
             json.dump(tempSuperDict, f)  
@@ -232,13 +244,6 @@ class dataVisualizer:
                     if p_values.loc[i+1,j+1] < 0.05: # S'ils sont significativement differents
                         print("Les groupes " + str(i) + " et " + str(j) + " sont significativement différents.")
             
-        
-
-
-        
-
-
-
         
             
     def compareData(self, typeLocTab, typeTdATab):
@@ -521,6 +526,23 @@ def findPoint(CurrentImpactAccelero):
             print("Cette méthode d'optimisation n'est pas valable.")
     return res.x
 
+        
+def plotAllFoundAndKnownPoints(foundPoints,KnownPoints):
+    
+    foundPointsAllX = [item[0] for item in foundPoints]
+    foundPointsAllY = [item[1] for item in foundPoints]
+    
+    knownPointsAllX = [item[0][0] for item in KnownPoints]
+    knownPointsAllY = [item[1][0] for item in KnownPoints]
+    
+    plt.scatter(foundPointsAllX,foundPointsAllY,color = 'r',marker = 'x', label = "Points trouvés")
+    plt.scatter(knownPointsAllX,knownPointsAllY,color = 'b',marker = 'x', label = "Points connus")
+    plt.ylim(-0.1,1.9)
+    plt.xlim(-0.1,1.9)
+    plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
+    plt.show()
+
+
 def differentiateSupposedAndTrueIMUsOrder(knownPointx,knownPointy):
     Tab = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
     Imu9 = IMU(knownPointx, knownPointy, 0)
@@ -541,11 +563,21 @@ def differentiateSupposedAndTrueIMUsOrder(knownPointx,knownPointy):
     
     ind_tri_tmps = np.argsort(TabTi)
     
+    
+    # On les met toujours dans ce sens là car cette bibliothèque est sensible au sens
+    # de comparaison.
+    
+    matcher = dfl.SequenceMatcher(None,ind_tri_distance,ind_tri_tmps)
+    
+    
     print("Tri distance")
     print(ind_tri_distance)
     print("Tri temps")
     print(ind_tri_tmps)
+    print("Ratio des deux séquences")
+    print(matcher.ratio())
     print("-----")    
+    return matcher.ratio()
 
 
 def main():
@@ -587,31 +619,40 @@ def main():
     deb = 0
     
     err = []
+    ratio = []
+    
+    foundPoints = []
 
-    # initialize_IMU_Spatial(IMULocalisations)
-    # for current_impact_index in range(deb, deb+nb_impact):
-    #     print(current_impact_index)
-    #     initialize_IMU_Temporel(ImpactAccelero[current_impact_index],TRAITEMENT_ACCELEROMETRE)
-    #     foundPoint = findPoint(ImpactAccelero[current_impact_index])
-    #     norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
-    #     # differentiateSupposedAndTrueIMUsOrder(ImpactLocalisation[current_impact_index][0][0],ImpactLocalisation[current_impact_index][1][0])
-    #     if norm_Error > 3:
-    #         print("Erreur dans le calcul de la norme.")
-    #     else :    
-    #         # plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
-    #         err.append(norm_Error)
+    initialize_IMU_Spatial(IMULocalisations)
+    for current_impact_index in range(deb, deb+nb_impact):
+        print(current_impact_index)
+        initialize_IMU_Temporel(ImpactAccelero[current_impact_index],TRAITEMENT_ACCELEROMETRE)
+        foundPoint = findPoint(ImpactAccelero[current_impact_index])
+        norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
+        
+        if norm_Error > 3:
+            print("Erreur dans le calcul de la norme.")
+        else :    
+            plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
+            ratio.append(differentiateSupposedAndTrueIMUsOrder(ImpactLocalisation[current_impact_index][0][0],ImpactLocalisation[current_impact_index][1][0]))
+            err.append(norm_Error)
+            foundPoints.append([foundPoint[0],foundPoint[1]])
         
         
-    dataVisu = dataVisualizer(JSON_FILE)
-    
-    
+    # dataVisu = dataVisualizer(JSON_FILE)
+    # print(foundPoints[:][1])
+    plotAllFoundAndKnownPoints(foundPoints,ImpactLocalisation)
     # prediction = Prediction(TYPE_LOCALISATION, TYPE_TDA, TYPE_OPTIMISATION, TRAITEMENT_ACCELEROMETRE, DATA_SET)
     
     # prediction.addData(err)
     
+    # prediction.addDataRatio(ratio)
+    
+    # prediction.ratioVsError()
+    
     # prediction.saveToJson()
     
-    dataVisu.anovaTest(["Trilateration","Trilateration"], ["SeuilNaif","SeuilNaif"], ["Default","Default"], ["Norme","Norme"], ["TapisSautStage","TapisSautMiniProj"])
+    # dataVisu.anovaTest(["Trilateration","Trilateration"], ["SeuilNaif","SeuilNaif"], ["Default","Default"], ["Norme","Norme"], ["TapisSautStage","TapisSautMiniProj"])
     
     # dataVisu.compareData(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"])
         
