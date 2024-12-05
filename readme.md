@@ -89,6 +89,8 @@ Voici la découpe des différents objectifs.
 
 Les différents type d'optimisation et le test de Kruskal Wallis montre que les résultats sont similaires avec un seuil de confiance de 5%. Nous resterons donc sur la méthode **Default**.
 
+### Méthode de TdA
 
+Les trois méthodes, testées avec Kruskal Wallis sur TapisSautStage, ont une différence significative pour chaque méthode entre elles, et la meilleure est la crossCorrelation (voir le graphique).
 
 Ce document est voué à être modifié au fur et à mesure.

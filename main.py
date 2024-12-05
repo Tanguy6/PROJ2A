@@ -174,7 +174,7 @@ class dataVisualizer:
     
     
     
-    def anovaTest(self,typeLocTab, typeTdATab, typeOptimisationTab, traitementAccelerometreTab, dataSetTab):
+    def anovaTest(self, typeLocTab, typeTdATab, typeOptimisationTab, traitementAccelerometreTab, dataSetTab):
         # Nous allons faire un ANOVA pour toutes les données dont les paramètres 
         # sont passés en paramètre, comme pour compaData.
         
@@ -257,33 +257,33 @@ class dataVisualizer:
             
         
             
-    def compareData(self, typeLocTab, typeTdATab):
+    def compareData(self, typeLocTab, typeTdATab, typeOptimisationTab, traitementAccelerometreTab, dataSetTab):
         length = len(typeLocTab)
         sortedData = [] 
         for i in range(0,length):
             sortedData.append([])
             for pred in self.predictions:
-                if pred.typeLocalisation == typeLocTab[i] and pred.typeTdA == typeTdATab[i]:
+                if pred.typeLocalisation == typeLocTab[i] and pred.typeTdA == typeTdATab[i] and pred.typeOptimisation == typeOptimisationTab[i] and pred.traitementAccelerometre == traitementAccelerometreTab[i] and pred.dataSet == dataSetTab[i]:
                     sortedData[i].extend(pred.data)
         for i in range(0,length):
-            print("Voici toutes les données de type " + typeLocTab[i] + " et " + typeTdATab[i])
+            print("Voici toutes les données de type " + typeLocTab[i] + " et " + typeTdATab[i] + " et " + typeOptimisationTab[i] + " et " + traitementAccelerometreTab[i] + " et " + dataSetTab[i])
             # print(sortedData[i])
         handles = []
         handlesLabel = []
-        medianData = []
+        meanData = []
         ecartData = []    
         for i in range(0,length):
-            medianData.append(stat.median(sortedData[i]))
+            meanData.append(stat.mean(sortedData[i]))
             ecartData.append(stat.pstdev(sortedData[i]))
         for i in range(0,length):
-            handles.append(plt.scatter(stat.median(sortedData[i]),stat.pstdev(sortedData[i]),label=typeTdATab[i]))
-            handlesLabel.append(typeLocTab[i] + " " + typeTdATab[i])
+            handles.append(plt.scatter(stat.mean(sortedData[i]),stat.pstdev(sortedData[i]),label=typeTdATab[i],marker = 'x' ))
+            handlesLabel.append(typeLocTab[i] + " " + typeTdATab[i] + " " + typeOptimisationTab[i] + " " + traitementAccelerometreTab[i] + " " + dataSetTab[i])
         plt.legend(handles,handlesLabel)
         plt.ylabel("Écart-type de la norme de l'erreur")
-        plt.xlabel("Médiane de la norme de l'erreur")
-        plt.xlim(0, max(medianData)+ 1)
+        plt.xlabel("Moyenne de la norme de l'erreur")
+        plt.xlim(0, max(meanData)+ 1)
         plt.ylim(0, max(ecartData)+ 1)
-        print(medianData)
+        print(meanData)
         print(ecartData)
 
 #######################################################
@@ -350,7 +350,7 @@ def trilaterationMethodSeuilEnveloppe(coordonates): # Fonction à minimiser tir�
         for j in range(i, n):
             for k in range(0, n-1):
                 for l in range(k,n):
-                    toRet += math.pow(tij(hilbertEnveloppe(Tab[i].t),hilbertEnveloppe(Tab[j].t))*(di(Imu9, Tab[k]) - di(Imu9, Tab[l])) - tij(hilbertEnveloppe(Tab[k].t),hilbertEnveloppe(Tab[l].t))*(di(Imu9, Tab[i]) - di(Imu9, Tab[j])) ,2)
+                    toRet += math.pow(tij(Tab[i],Tab[j])*(di(Imu9, Tab[k]) - di(Imu9, Tab[l])) - tij(Tab[k],Tab[l])*(di(Imu9, Tab[i]) - di(Imu9, Tab[j])) ,2)
     return toRet
 
 def trilaterationMethodTransforméeOndelette(coordonates): # Fonction à minimiser tirée de la revue de Kundu et al.
@@ -418,7 +418,7 @@ def initialize_IMU_Temporel(CurrentImpactAccelero,traitementAccelerometreParam):
                     Imu6.t = findPeak(M31)
                     Imu7.t = findPeak(M32)
                     Imu8.t = findPeak(M33)
-                case "CrossCorrelation" | "SeuilEnveloppe":
+                case "CrossCorrelation": 
                     Imu1.t = M11
                     Imu2.t = M12
                     Imu3.t = M13
@@ -427,6 +427,15 @@ def initialize_IMU_Temporel(CurrentImpactAccelero,traitementAccelerometreParam):
                     Imu6.t = M31
                     Imu7.t = M32
                     Imu8.t = M33
+                case "SeuilEnveloppe":
+                    Imu1.t = findPeak(hilbertEnveloppe(M11))
+                    Imu2.t = findPeak(hilbertEnveloppe(M12))
+                    Imu3.t = findPeak(hilbertEnveloppe(M13))
+                    Imu4.t = findPeak(hilbertEnveloppe(M21))
+                    Imu5.t = findPeak(hilbertEnveloppe(M23))
+                    Imu6.t = findPeak(hilbertEnveloppe(M31))
+                    Imu7.t = findPeak(hilbertEnveloppe(M32))
+                    Imu8.t = findPeak(hilbertEnveloppe(M33))
                 case _:
                     print("Cette méthode pour récupérer le TdA n'est pas valable.")
                     
@@ -578,7 +587,14 @@ def differentiateSupposedAndTrueIMUsOrder(knownPointx,knownPointy):
     
     ind_tri_distance = np.argsort(TabDi)
     
-    TabTi = [Imu1.t,Imu2.t,Imu3.t,Imu4.t,Imu5.t,Imu6.t,Imu7.t,Imu8.t]
+    match TYPE_TDA:
+        case "SeuilNaif" | "SeuilEnveloppe": 
+            TabTi = [Imu1.t,Imu2.t,Imu3.t,Imu4.t,Imu5.t,Imu6.t,Imu7.t,Imu8.t]
+        case "CrossCorrelation":
+            TabTi = [0,crossCorrelation(Imu1.t, Imu2.t),crossCorrelation(Imu1.t, Imu3.t),crossCorrelation(Imu1.t, Imu4.t),crossCorrelation(Imu1.t, Imu5.t),crossCorrelation(Imu1.t, Imu6.t),crossCorrelation(Imu1.t, Imu7.t),crossCorrelation(Imu1.t, Imu8.t)]
+        case _:
+            TabTi = [0,0,0,0,0,0,0,0]
+    
     
     ind_tri_tmps = np.argsort(TabTi)
     
@@ -675,9 +691,9 @@ def main():
     
     
     dataVisu = dataVisualizer(JSON_FILE)
-    # # print(foundPoints[:][1])
-    dataVisu.anovaTest(["Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration","Trilateration"], ["SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif","SeuilNaif"], ["Default", "Nelder-Mead" , "Powell" , "CG" , "BFGS" , "Newton-CG" , "L-BFGS-B" , "TNC" , "COBYLA" , "SLSQP" , "trust-constr" , "dogleg" , "trust-ncg" , "trust-exact" , "trust-krylov"], ["Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme","Norme"], ["TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage","TapisSautStage"])
-    
+    # # # print(foundPoints[:][1])
+    dataVisu.anovaTest(["Trilateration","Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation","SeuilEnveloppe"], ["Default","Default","Default"], ["Norme","Norme","Norme"], ["TapisSautStage","TapisSautStage","TapisSautStage"])
+    dataVisu.compareData(["Trilateration","Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation","SeuilEnveloppe"], ["Default","Default","Default"], ["Norme","Norme","Norme"], ["TapisSautStage","TapisSautStage","TapisSautStage"])
     # dataVisu.compareData(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"])
         
     # print(dataVisu.isTwoPopulationstatisticallyDifferent([1,¨4,5], [1,4,6]))

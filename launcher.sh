@@ -12,14 +12,14 @@ DATA_SET=("SurtapisSautStage" "SurtapisImpactStage" "SurtapisToutStage" "Surtapi
 # On choisit ceux qu'on veut tester pour cette run
 
 
-TYPE_TDA="SeuilNaif"
-VALEUR_SEUIL=4.0
+TYPE_OPTIMISATION="Default"
 TRAITEMENT_ACCELEROMETRE="Norme"
+VALEUR_SEUIL=4.0
 DATA_SET="TapisSautStage"
 
-for t in ${TYPE_OPTIMISATION[@]}; do
-   mkdir Images/${TYPE_LOCALISATION}_${TYPE_TDA}_${t}_${VALEUR_SEUIL}_${TRAITEMENT_ACCELEROMETRE}_${DATA_SET}  
-   python3 main.py ${TYPE_LOCALISATION} ${TYPE_TDA} ${t} ${VALEUR_SEUIL} ${TRAITEMENT_ACCELEROMETRE} ${DATA_SET}
+for t in ${TYPE_TDA[@]}; do
+   mkdir Images/${TYPE_LOCALISATION}_${t}_${TYPE_OPTIMISATION}_${VALEUR_SEUIL}_${TRAITEMENT_ACCELEROMETRE}_${DATA_SET}  
+   python3 main.py ${TYPE_LOCALISATION} ${t} ${TYPE_OPTIMISATION} ${VALEUR_SEUIL} ${TRAITEMENT_ACCELEROMETRE} ${DATA_SET}
 done
 
 
