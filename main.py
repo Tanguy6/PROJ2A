@@ -692,11 +692,14 @@ def main():
     
     dataVisu = dataVisualizer(JSON_FILE)
     # # # print(foundPoints[:][1])
-    dataVisu.anovaTest(["Trilateration","Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation","SeuilEnveloppe"], ["Default","Default","Default"], ["Norme","Norme","Norme"], ["TapisSautStage","TapisSautStage","TapisSautStage"])
-    dataVisu.compareData(["Trilateration","Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation","SeuilEnveloppe"], ["Default","Default","Default"], ["Norme","Norme","Norme"], ["TapisSautStage","TapisSautStage","TapisSautStage"])
-    # dataVisu.compareData(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"])
+    dataVisu.anovaTest(["Trilateration","Trilateration"], ["CrossCorrelation","CrossCorrelation"], ["Default","Default"], ["Norme","Norme"], ["TapisImpactMiniProj","TapisStatiqueImpactMiniProj"])
+    
+    
+    dataVisu.compareData(["Trilateration","Trilateration"], ["CrossCorrelation","CrossCorrelation"], ["Default","Default"], ["Norme","Norme"], ["TapisImpactMiniProj","TapisStatiqueImpactMiniProj"])
+    # dataVisu.compareData(["Trilateration","Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation","SeuilEnveloppe"], ["Default","Default","Default"], ["Norme","Norme","Norme"], ["TapisSautStage","TapisSautStage","TapisSautStage"])
+    # # dataVisu.compareData(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"])
         
-    # print(dataVisu.isTwoPopulationstatisticallyDifferent([1,¨4,5], [1,4,6]))
+    # # print(dataVisu.isTwoPopulationstatisticallyDifferent([1,¨4,5], [1,4,6]))
     
 
     print('argument list', sys.argv)

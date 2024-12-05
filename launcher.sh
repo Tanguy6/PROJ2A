@@ -13,13 +13,15 @@ DATA_SET=("SurtapisSautStage" "SurtapisImpactStage" "SurtapisToutStage" "Surtapi
 
 
 TYPE_OPTIMISATION="Default"
+TYPE_TDA="CrossCorrelation"
 TRAITEMENT_ACCELEROMETRE="Norme"
 VALEUR_SEUIL=4.0
-DATA_SET="TapisSautStage"
+DATA_SET=("TapisImpactMiniProj" "TapisStatiqueImpactMiniProj")
 
-for t in ${TYPE_TDA[@]}; do
-   mkdir Images/${TYPE_LOCALISATION}_${t}_${TYPE_OPTIMISATION}_${VALEUR_SEUIL}_${TRAITEMENT_ACCELEROMETRE}_${DATA_SET}  
-   python3 main.py ${TYPE_LOCALISATION} ${t} ${TYPE_OPTIMISATION} ${VALEUR_SEUIL} ${TRAITEMENT_ACCELEROMETRE} ${DATA_SET}
+
+for t in ${DATA_SET[@]}; do
+   mkdir Images/${TYPE_LOCALISATION}_${TYPE_TDA}_${TYPE_OPTIMISATION}_${VALEUR_SEUIL}_${TRAITEMENT_ACCELEROMETRE}_${t}  
+   python3 main.py ${TYPE_LOCALISATION} ${TYPE_TDA} ${TYPE_OPTIMISATION} ${VALEUR_SEUIL} ${TRAITEMENT_ACCELEROMETRE} ${t}
 done
 
 
