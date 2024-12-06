@@ -661,41 +661,43 @@ def main():
     # Partie a decommenter pour faire les calculs
 
 
-    # initialize_IMU_Spatial(IMULocalisations)
-    # for current_impact_index in range(deb, deb+nb_impact):
-    #     # print(current_impact_index)
-    #     initialize_IMU_Temporel(ImpactAccelero[current_impact_index],TRAITEMENT_ACCELEROMETRE)
-    #     foundPoint = findPoint(ImpactAccelero[current_impact_index])
-    #     norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
-    #     print(current_impact_index)
-    #     if norm_Error > 3:
-    #         print("Erreur dans le calcul de la norme.")
-    #     else :    
-    #         plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
-    #         ratio.append(differentiateSupposedAndTrueIMUsOrder(ImpactLocalisation[current_impact_index][0][0],ImpactLocalisation[current_impact_index][1][0]))
-    #         err.append(norm_Error)
-    #         foundPoints.append([foundPoint[0],foundPoint[1]])
+    initialize_IMU_Spatial(IMULocalisations)
+    for current_impact_index in range(deb, deb+nb_impact):
+        # print(current_impact_index)
+        initialize_IMU_Temporel(ImpactAccelero[current_impact_index],TRAITEMENT_ACCELEROMETRE)
+        foundPoint = findPoint(ImpactAccelero[current_impact_index])
+        norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
+        print(current_impact_index)
+        if norm_Error > 3:
+            print("Erreur dans le calcul de la norme.")
+        else :    
+            plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
+            ratio.append(differentiateSupposedAndTrueIMUsOrder(ImpactLocalisation[current_impact_index][0][0],ImpactLocalisation[current_impact_index][1][0]))
+            err.append(norm_Error)
+            foundPoints.append([foundPoint[0],foundPoint[1]])
         
         
-    # plotAllFoundAndKnownPoints(foundPoints,ImpactLocalisation)
+    plotAllFoundAndKnownPoints(foundPoints,ImpactLocalisation)
     
-    # prediction = Prediction(TYPE_LOCALISATION, TYPE_TDA, TYPE_OPTIMISATION, VALEUR_SEUIL, TRAITEMENT_ACCELEROMETRE, DATA_SET)
+    prediction = Prediction(TYPE_LOCALISATION, TYPE_TDA, TYPE_OPTIMISATION, VALEUR_SEUIL, TRAITEMENT_ACCELEROMETRE, DATA_SET)
     
-    # prediction.addData(err)
+    prediction.addData(err)
     
-    # prediction.addDataRatio(ratio)
+    prediction.addDataRatio(ratio)
     
-    # prediction.saveToJson()
+    # prediction.ratioVsError()
+    
+    prediction.saveToJson()
 
     # Partie a decommenter pour faire de la comparaison
     
     
-    dataVisu = dataVisualizer(JSON_FILE)
-    # # # print(foundPoints[:][1])
-    dataVisu.anovaTest(["Trilateration","Trilateration"], ["CrossCorrelation","CrossCorrelation"], ["Default","Default"], ["Norme","Norme"], ["TapisImpactMiniProj","TapisStatiqueImpactMiniProj"])
+    # dataVisu = dataVisualizer(JSON_FILE)
+    # # # # print(foundPoints[:][1])
+    # dataVisu.anovaTest(["Trilateration","Trilateration"], ["CrossCorrelation","CrossCorrelation"], ["Default","Default"], ["Norme","Norme"], ["TapisImpactMiniProj","TapisStatiqueImpactMiniProj"])
     
     
-    dataVisu.compareData(["Trilateration","Trilateration"], ["CrossCorrelation","CrossCorrelation"], ["Default","Default"], ["Norme","Norme"], ["TapisImpactMiniProj","TapisStatiqueImpactMiniProj"])
+    # dataVisu.compareData(["Trilateration","Trilateration"], ["CrossCorrelation","CrossCorrelation"], ["Default","Default"], ["Norme","Norme"], ["TapisImpactMiniProj","TapisStatiqueImpactMiniProj"])
     # dataVisu.compareData(["Trilateration","Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation","SeuilEnveloppe"], ["Default","Default","Default"], ["Norme","Norme","Norme"], ["TapisSautStage","TapisSautStage","TapisSautStage"])
     # # dataVisu.compareData(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"])
         

@@ -16,7 +16,7 @@ TYPE_OPTIMISATION="Default"
 TYPE_TDA="CrossCorrelation"
 TRAITEMENT_ACCELEROMETRE="Norme"
 VALEUR_SEUIL=4.0
-DATA_SET=("TapisImpactMiniProj" "TapisStatiqueImpactMiniProj")
+DATA_SET=("SurtapisSautStage" "SurtapisImpactStage" "SurtapisToutStage" "TapisSautStage" "TapisImpactStage" "TapisToutStage")
 
 
 for t in ${DATA_SET[@]}; do
