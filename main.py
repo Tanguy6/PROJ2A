@@ -23,7 +23,7 @@ import sys
 #                    Constantes
 #######################################################
 
-JSON_FILE = "data.json"
+JSON_FILE = "data_Compare_StatiquePasStatique.json"
 
 # TYPE_LOCALISATION : "Trilateration" , "NeuralNetwork"
 TYPE_LOCALISATION = "Trilateration"
@@ -255,7 +255,220 @@ class dataVisualizer:
                     if p_values.loc[i+1,j+1] < 0.05: # S'ils sont significativement differents
                         print("Les groupes " + str(i) + " et " + str(j) + " sont significativement différents.")
             
+    # Adapté de https://rowannicholls.github.io/python/graphs/ax_based/boxplots_significance.html
+    def box_and_whisker(self,title, ylabel):
+                
+        # On trie les données
         
+        length = len(self.predictions)
+        xticklabels = []
+        data = [] 
+ 
+        for pred in self.predictions:
+            xticklab = "T"
+            match pred.typeTdA:
+                case "SeuilNaif":
+                    xticklab = xticklab + "-SN"
+                case "CrossCorrelation":
+                    xticklab = xticklab + "-CC"
+                case "SeuilEnveloppe":
+                    xticklab = xticklab + "-SE"
+            match pred.typeOptimisation:
+                case "Default":
+                    xticklab = xticklab + "-D"
+                case "Nelder-Mead":
+                    xticklab = xticklab + "-NM"
+                case "Powell":
+                    xticklab = xticklab + "-P"
+                case "CG":
+                    xticklab = xticklab + "-CG"
+                case "BFGS":
+                    xticklab = xticklab + "-BF"
+                case "Newton-CG":
+                    xticklab = xticklab + "-NCG"
+                case "L-BFGS-B":
+                    xticklab = xticklab + "-BFB"
+                case "TNC":
+                    xticklab = xticklab + "-TNC"
+                case "COBYLA":
+                    xticklab = xticklab + "-CO"
+                case "SLSQP":
+                    xticklab = xticklab + "-SL"
+                case "trust-constr":
+                    xticklab = xticklab + "-tc"
+                case "dogleg":
+                    xticklab = xticklab + "-dg"
+                case "trust-ncg":
+                    xticklab = xticklab + "-tn"
+                case "trust-exact":
+                    xticklab = xticklab + "-te"
+                case "trust-krylov":
+                    xticklab = xticklab + "-tk"
+            match pred.traitementAccelerometre:
+                case "AxeZ":
+                    xticklab = xticklab + "-Z"
+                case "Norme":
+                    xticklab = xticklab + "-N"
+            match pred.dataSet:
+                case "SurtapisSautStage":
+                    xticklab = xticklab + "-SSS"
+                case "SurtapisImpactStage":
+                    xticklab = xticklab + "-SIS"
+                case "SurtapisToutStage":
+                    xticklab = xticklab + "-STS"
+                case "SurtapisSautMiniProj":
+                    xticklab = xticklab + "-SSP"
+                case "SurtapisImpactMiniProj":
+                    xticklab = xticklab + "-SIP"
+                case "SurtapisToutMiniProj":
+                    xticklab = xticklab + "-STP"
+                case "TapisSautStage":
+                    xticklab = xticklab + "-TSS"
+                case "TapisImpactStage":
+                    xticklab = xticklab + "-TIS"
+                case "TapisToutStage":
+                    xticklab = xticklab + "-TTS"
+                case "TapisSautMiniProj":
+                    xticklab = xticklab + "-TSP"
+                case "TapisImpactMiniProj":
+                    xticklab = xticklab + "-TIP"
+                case "TapisToutMiniProj":
+                    xticklab = xticklab + "-TTP"
+                case "TapisStatiqueSautMiniProj":
+                    xticklab = xticklab + "-TSSP"
+                case "TapisStatiqueImpactMiniProj":
+                    xticklab = xticklab + "-TSIP"
+                case "SurtapisStatiqueImpactMiniProj":
+                    xticklab = xticklab + "-SSIP"
+            data.append(pred.data)
+            xticklabels.append(xticklab)
+        
+        ax = plt.axes()
+        print(length)
+        bp = ax.boxplot(data, widths=0.6, patch_artist=True)
+        # Graph title
+        
+        # Label y-axis
+        ax.set_ylabel(ylabel)
+        # Label x-axis ticks
+        ax.set_xticklabels(xticklabels)
+        # Hide x-axis major ticks
+        ax.tick_params(axis='x', which='major', length=0)
+        # Show x-axis minor ticks
+        xticks = [0.5] + [x + 0.5 for x in ax.get_xticks()]
+        ax.set_xticks(xticks, minor=True)
+        # Clean up the appearance
+        ax.tick_params(axis='x', which='minor', length=3, width=1)
+        ax.tick_params(axis='x', labelrotation=65)
+            # Change the colour of the boxes to Seaborn's 'pastel' palette
+            # colors = sns.color_palette('pastel')
+            # for patch, color in zip(bp['boxes'], colors):
+            #    patch.set_facecolor(color)
+
+            # Colour of the median lines
+        plt.setp(bp['medians'], color='k')
+            # Check for statistical significance
+            
+        flagNormality = True
+        
+        
+        for i in range(0,length):
+            if(scstats.shapiro(data[i])[1] < 0.05):
+                print("Un des échantillons ne suit pas une loi normale. \nNous passons alors par le test de Kruskal Wallis.")
+                flagNormality = False
+                break
+        
+        
+        significant_combinations = []
+        
+        
+        
+        if (flagNormality):
+            ax.set_title(title + "ANOVA et TukeyHSD", fontsize=14)
+            ls = list(range(0, len(data)))
+            combinations = [(ls[x], ls[x + y]) for y in reversed(ls) for x in range((len(ls) - y))]
+            # Une fois que nous sommes surs que nos echantillons sont normaux,
+            # nous faisons notre one way anova
+            if (scstats.f_oneway(*data)[1] > 0.05):
+                print("On peut accepter l'hypothèse nulle avec une confiance de 5%.")
+                # return
+            
+            print("L'hypothèse nulle est rejetée, donc il y a une différence significative entre les echantillons.")    
+            
+            # S'il y a une différence statistiquement significative, on utilise un test post hoc pour savoir quel 
+            # couple pose souci
+            res = scstats.tukey_hsd(*data)
+            
+            for c in combinations:
+                if res.pvalue[c] < 0.05:
+                    significant_combinations.append([c, res.pvalue[c]])
+                  
+        else:
+            
+            ax.set_title(title + "Kruskal-Wallis et Dunn", fontsize=14, wrap=True)
+            # Si la loi suivie n'est pas normale, il faut alors réaliser un test
+            # de Kruskal Wallis, suivi d'un test post-hoc de Dunn
+            ls = list(range(1, len(data) + 1))
+            combinations = [(ls[x], ls[x + y]) for y in reversed(ls) for x in range((len(ls) - y))]
+            if (scstats.kruskal(*data)[1] > 0.05):
+                print("On peut accepter l'hypothèse nulle avec une confiance de 5%.")
+                # return 
+            
+            print("L'hypothèse nulle est rejetée, donc il y a une différence significative entre les echantillons.")    
+            
+            # S'il y a une différence statistiquement significative, on utilise un test post hoc pour savoir quel 
+            # couple pose souci
+        
+            p_values = sp.posthoc_dunn(data, p_adjust='holm')
+            
+            for c in combinations:
+                if p_values.loc[c] < 0.05:
+                    significant_combinations.append([c, p_values.loc[c]])
+                
+                
+        
+        # Check from the outside pairs of boxes inwards
+        
+       
+        # Get info about y-axis
+        bottom, top = ax.get_ylim()
+        yrange = top - bottom
+
+        # Significance bars
+        for i, significant_combination in enumerate(significant_combinations):
+            # Columns corresponding to the datasets of interest
+            x1 = significant_combination[0][0]
+            x2 = significant_combination[0][1]
+            # What level is this bar among the bars above the plot?
+            level = len(significant_combinations) - i
+            # Plot the bar
+            bar_height = (yrange * 0.08 * level) + top
+            bar_tips = bar_height - (yrange * 0.02)
+            plt.plot(
+                [x1, x1, x2, x2],
+                [bar_tips, bar_height, bar_height, bar_tips], lw=1, c='k')
+            # Significance level
+            p = significant_combination[1]
+            if p < 0.001:
+                sig_symbol = '***'
+            elif p < 0.01:
+                sig_symbol = '**'
+            elif p < 0.05:
+                sig_symbol = '*'
+            text_height = bar_height + (yrange * 0.01)
+            plt.text((x1 + x2) * 0.5, text_height, sig_symbol, ha='center', c='k')
+
+            # Adjust y-axis
+        bottom, top = ax.get_ylim()
+        yrange = top - bottom
+        ax.set_ylim(bottom - 0.02 * yrange, top)
+
+        # Annotate sample size below each box
+        for i, dataset in enumerate(data):
+            sample_size = len(dataset)
+            ax.text(i + 1, bottom-0.005, fr'n = {sample_size}', ha='center', size='x-small')
+        
+        plt.show()
             
     def compareData(self, typeLocTab, typeTdATab, typeOptimisationTab, traitementAccelerometreTab, dataSetTab):
         length = len(typeLocTab)
@@ -571,6 +784,9 @@ def plotAllFoundAndKnownPoints(foundPoints,KnownPoints):
         plt.close()
 
 
+
+
+
 def differentiateSupposedAndTrueIMUsOrder(knownPointx,knownPointy):
     Tab = [Imu1,Imu2,Imu3,Imu4,Imu5,Imu6,Imu7,Imu8]
     Imu9 = IMU(knownPointx, knownPointy, 0)
@@ -672,41 +888,42 @@ def main():
     # Partie a decommenter pour faire les calculs
 
 
-    initialize_IMU_Spatial(IMULocalisations)
-    for current_impact_index in range(deb, deb+nb_impact):
-        # print(current_impact_index)
-        initialize_IMU_Temporel(ImpactAccelero[current_impact_index],TRAITEMENT_ACCELEROMETRE)
-        foundPoint = findPoint(ImpactAccelero[current_impact_index])
-        norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
-        print(current_impact_index)
-        if norm_Error > 3:
-            print("Erreur dans le calcul de la norme.")
-        else :    
-            plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
-            ratio.append(differentiateSupposedAndTrueIMUsOrder(ImpactLocalisation[current_impact_index][0][0],ImpactLocalisation[current_impact_index][1][0]))
-            err.append(norm_Error)
-            foundPoints.append([foundPoint[0],foundPoint[1]])
+    # initialize_IMU_Spatial(IMULocalisations)
+    # for current_impact_index in range(deb, deb+nb_impact):
+    #     # print(current_impact_index)
+    #     initialize_IMU_Temporel(ImpactAccelero[current_impact_index],TRAITEMENT_ACCELEROMETRE)
+    #     foundPoint = findPoint(ImpactAccelero[current_impact_index])
+    #     norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
+    #     print(current_impact_index)
+    #     if norm_Error > 3:
+    #         print("Erreur dans le calcul de la norme.")
+    #     else :    
+    #         plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
+    #         ratio.append(differentiateSupposedAndTrueIMUsOrder(ImpactLocalisation[current_impact_index][0][0],ImpactLocalisation[current_impact_index][1][0]))
+    #         err.append(norm_Error)
+    #         foundPoints.append([foundPoint[0],foundPoint[1]])
         
         
-    plotAllFoundAndKnownPoints(foundPoints,ImpactLocalisation)
+    # plotAllFoundAndKnownPoints(foundPoints,ImpactLocalisation)
     
-    prediction = Prediction(TYPE_LOCALISATION, TYPE_TDA, TYPE_OPTIMISATION, VALEUR_SEUIL, TRAITEMENT_ACCELEROMETRE, DATA_SET)
+    # prediction = Prediction(TYPE_LOCALISATION, TYPE_TDA, TYPE_OPTIMISATION, VALEUR_SEUIL, TRAITEMENT_ACCELEROMETRE, DATA_SET)
     
-    prediction.addData(err)
+    # prediction.addData(err)
     
-    prediction.addDataRatio(ratio)
+    # prediction.addDataRatio(ratio)
     
-    # prediction.ratioVsError()
+    # # prediction.ratioVsError()
     
-    prediction.saveToJson()
+    # prediction.saveToJson()
 
     # Partie a decommenter pour faire de la comparaison
     
     
-    # dataVisu = dataVisualizer(JSON_FILE)
+    dataVisu = dataVisualizer(JSON_FILE)
     # # # # print(foundPoints[:][1])
     # dataVisu.anovaTest(["Trilateration","Trilateration"], ["CrossCorrelation","CrossCorrelation"], ["Default","Default"], ["Norme","Norme"], ["TapisImpactMiniProj","TapisStatiqueImpactMiniProj"])
     
+    dataVisu.box_and_whisker("Comparaison des méthodes de détermination du TdA ", r'Erreur de prédiction $(m)$')
     
     # dataVisu.compareData(["Trilateration","Trilateration"], ["CrossCorrelation","CrossCorrelation"], ["Default","Default"], ["Norme","Norme"], ["TapisImpactMiniProj","TapisStatiqueImpactMiniProj"])
     # dataVisu.compareData(["Trilateration","Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation","SeuilEnveloppe"], ["Default","Default","Default"], ["Norme","Norme","Norme"], ["TapisSautStage","TapisSautStage","TapisSautStage"])
