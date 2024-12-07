@@ -1,8 +1,10 @@
 Data/
 NewData/
-Rapport/
+Rapport/*
 Images/
 #data.json
 classDefinition.py
 isotropicUnknownCelerityTraingulation.py
 peakMethods.py
+
+!Rapport/Article.pdf

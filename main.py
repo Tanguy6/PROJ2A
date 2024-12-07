@@ -583,6 +583,9 @@ def differentiateSupposedAndTrueIMUsOrder(knownPointx,knownPointy):
     d7 = di(Imu9, Tab[6])
     d8 = di(Imu9, Tab[7])
     
+    
+    
+    
     TabDi = [d1,d2,d3,d4,d5,d6,d7,d8]
     
     ind_tri_distance = np.argsort(TabDi)
@@ -601,6 +604,13 @@ def differentiateSupposedAndTrueIMUsOrder(knownPointx,knownPointy):
     
     # On les met toujours dans ce sens là car cette bibliothèque est sensible au sens
     # de comparaison.
+    
+    
+    match_values = 0
+    
+    for valeurDistance in ind_tri_distance:
+        if valeurDistance == 
+    
     
     matcher = dfl.SequenceMatcher(None,ind_tri_distance,ind_tri_tmps)
     
