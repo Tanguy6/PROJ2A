@@ -608,11 +608,12 @@ def differentiateSupposedAndTrueIMUsOrder(knownPointx,knownPointy):
     
     match_values = 0
     
-    for valeurDistance in ind_tri_distance:
-        if valeurDistance == 
+    for i in range(0,8):
+        if ind_tri_distance[i] == ind_tri_tmps[i]:
+            match_values = match_values + 1
     
     
-    matcher = dfl.SequenceMatcher(None,ind_tri_distance,ind_tri_tmps)
+    # matcher = dfl.SequenceMatcher(None,ind_tri_distance,ind_tri_tmps)
     
     
     # print("Tri distance")
@@ -622,7 +623,7 @@ def differentiateSupposedAndTrueIMUsOrder(knownPointx,knownPointy):
     # print("Ratio des deux séquences")
     # print(matcher.ratio())
     # print("-----")    
-    return matcher.ratio()
+    return match_values/8
 
 
 def main():
