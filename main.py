@@ -23,7 +23,7 @@ import sys
 #                    Constantes
 #######################################################
 
-JSON_FILE = "data_Compare_StatiquePasStatique.json"
+JSON_FILE = "data_Compare_methodeTDA.json"
 
 # TYPE_LOCALISATION : "Trilateration" , "NeuralNetwork"
 TYPE_LOCALISATION = "Trilateration"
@@ -582,14 +582,36 @@ def trilaterationMethodTransforméeOndelette(coordonates): # Fonction à minimis
 def initialize_IMU_Temporel(CurrentImpactAccelero,traitementAccelerometreParam):  
     match traitementAccelerometreParam:
         case "AxeZ":
-            Imu1.t = findPeak(CurrentImpactAccelero[2])
-            Imu2.t = findPeak(CurrentImpactAccelero[5])
-            Imu3.t = findPeak(CurrentImpactAccelero[8])
-            Imu4.t = findPeak(CurrentImpactAccelero[11])
-            Imu5.t = findPeak(CurrentImpactAccelero[14])
-            Imu6.t = findPeak(CurrentImpactAccelero[17])
-            Imu7.t = findPeak(CurrentImpactAccelero[20])
-            Imu8.t = findPeak(CurrentImpactAccelero[23])
+            match TYPE_TDA:
+                case "SeuilNaif": 
+                    Imu1.t = findPeak(CurrentImpactAccelero[2])
+                    Imu2.t = findPeak(CurrentImpactAccelero[5])
+                    Imu3.t = findPeak(CurrentImpactAccelero[8])
+                    Imu4.t = findPeak(CurrentImpactAccelero[11])
+                    Imu5.t = findPeak(CurrentImpactAccelero[14])
+                    Imu6.t = findPeak(CurrentImpactAccelero[17])
+                    Imu7.t = findPeak(CurrentImpactAccelero[20])
+                    Imu8.t = findPeak(CurrentImpactAccelero[23])
+                case "CrossCorrelation": 
+                    Imu1.t = CurrentImpactAccelero[2]
+                    Imu2.t = CurrentImpactAccelero[5]
+                    Imu3.t = CurrentImpactAccelero[8]
+                    Imu4.t = CurrentImpactAccelero[11]
+                    Imu5.t = CurrentImpactAccelero[14]
+                    Imu6.t = CurrentImpactAccelero[17]
+                    Imu7.t = CurrentImpactAccelero[20]
+                    Imu8.t = CurrentImpactAccelero[23]
+                case "SeuilEnveloppe":
+                    Imu1.t = findPeak(hilbertEnveloppe(CurrentImpactAccelero[2]))
+                    Imu2.t = findPeak(hilbertEnveloppe(CurrentImpactAccelero[5]))
+                    Imu3.t = findPeak(hilbertEnveloppe(CurrentImpactAccelero[8]))
+                    Imu4.t = findPeak(hilbertEnveloppe(CurrentImpactAccelero[11]))
+                    Imu5.t = findPeak(hilbertEnveloppe(CurrentImpactAccelero[14]))
+                    Imu6.t = findPeak(hilbertEnveloppe(CurrentImpactAccelero[17]))
+                    Imu7.t = findPeak(hilbertEnveloppe(CurrentImpactAccelero[20]))
+                    Imu8.t = findPeak(hilbertEnveloppe(CurrentImpactAccelero[23]))
+                case _:
+                    print("Cette méthode pour récupérer le TdA n'est pas valable.")
         case "Norme":
             # On récupère la norme du vecteur accélération
             m11 = np.transpose(np.linalg.norm(CurrentImpactAccelero[0:3,:],axis=0))
@@ -912,7 +934,7 @@ def main():
     
     # prediction.addDataRatio(ratio)
     
-    # # prediction.ratioVsError()
+    # prediction.ratioVsError()
     
     # prediction.saveToJson()
 
@@ -923,7 +945,7 @@ def main():
     # # # # print(foundPoints[:][1])
     # dataVisu.anovaTest(["Trilateration","Trilateration"], ["CrossCorrelation","CrossCorrelation"], ["Default","Default"], ["Norme","Norme"], ["TapisImpactMiniProj","TapisStatiqueImpactMiniProj"])
     
-    dataVisu.box_and_whisker("Comparaison des méthodes de détermination du TdA ", r'Erreur de prédiction $(m)$')
+    dataVisu.box_and_whisker("Comparaison des calculs de TdA ", r'Erreur de prédiction $(m)$')
     
     # dataVisu.compareData(["Trilateration","Trilateration"], ["CrossCorrelation","CrossCorrelation"], ["Default","Default"], ["Norme","Norme"], ["TapisImpactMiniProj","TapisStatiqueImpactMiniProj"])
     # dataVisu.compareData(["Trilateration","Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation","SeuilEnveloppe"], ["Default","Default","Default"], ["Norme","Norme","Norme"], ["TapisSautStage","TapisSautStage","TapisSautStage"])
