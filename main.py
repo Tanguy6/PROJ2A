@@ -11,6 +11,7 @@ import scipy as sc
 import scipy.stats as scstats
 import statistics as stat
 import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
 import time
 import math
@@ -18,12 +19,14 @@ import json
 import scikit_posthocs as sp
 import difflib as dfl
 import sys
+import random as rd
+import matplotlib.patches as mpatches
 
 #######################################################
 #                    Constantes
 #######################################################
 
-JSON_FILE = "data_Compare_methodeTDA.json"
+JSON_FILE = "data2.json"
 
 # TYPE_LOCALISATION : "Trilateration" , "NeuralNetwork"
 TYPE_LOCALISATION = "Trilateration"
@@ -32,7 +35,7 @@ TYPE_TDA = "SeuilNaif"
 # TYPE_OPTIMISATION : "Default", "Nelder-Mead" , "Powell" , "CG" , "BFGS" , "Newton-CG" , "L-BFGS-B" , "TNC" , "COBYLA" , "SLSQP" , "trust-constr" , "dogleg" , "trust-ncg" , "trust-exact" , "trust-krylov"
 TYPE_OPTIMISATION = "Default" 
 # VALEUR_SEUIL : x
-VALEUR_SEUIL = 4
+VALEUR_SEUIL = 3.5
 # TRAITEMENT_ACCELEROMETRE : "AxeZ" , "Norme" 
 TRAITEMENT_ACCELEROMETRE = "Norme"
 # DATA_SET : "SurtapisSautStage" , "SurtapisImpactStage", "SurtapisToutStage" , 
@@ -40,7 +43,7 @@ TRAITEMENT_ACCELEROMETRE = "Norme"
 # "SurtapisTout", "TapisSautStage" , "TapisImpactStage", "TapisToutStage" , 
 # "TapisSautMiniProj" , "TapisImpactMiniProj" , "TapisToutMiniProj" , "TapisTout"
 # "TapisStatiqueSautMiniProj" , "TapisStatiqueImpactMiniProj" , "SurtapisStatiqueImpactMiniProj" 
-DATA_SET = "TapisSautStage"
+DATA_SET = "SurtapisStatiqueImpactStage"
 SHOW_FIGURES = True
 IMAGE_PATH = ""
 
@@ -141,7 +144,7 @@ class dataVisualizer:
             # print(prediction)
             self.predictions.append(Prediction(prediction["typeLocalisation"], prediction["typeTdA"], prediction["typeOptimisation"], prediction["valeurSeuil"], prediction["traitementAccelerometre"], prediction["dataSet"]))
             self.predictions[-1].addData(prediction["data"])
-            self.predictions[-1].addData(prediction["dataRatio"])
+            self.predictions[-1].addDataRatio(prediction["dataRatio"])
             
             
     def showData(self):
@@ -268,7 +271,7 @@ class dataVisualizer:
             xticklab = "T"
             match pred.typeTdA:
                 case "SeuilNaif":
-                    xticklab = xticklab + "-SN"
+                    xticklab = xticklab + "-SN" + str(pred.valeurSeuil)
                 case "CrossCorrelation":
                     xticklab = xticklab + "-CC"
                 case "SeuilEnveloppe":
@@ -334,13 +337,25 @@ class dataVisualizer:
                     xticklab = xticklab + "-TIP"
                 case "TapisToutMiniProj":
                     xticklab = xticklab + "-TTP"
+                case "SurtapisStatiqueSautStage":
+                    xticklab = xticklab + "-SSSS"
+                case "SurtapisStatiqueImpactStage":
+                    xticklab = xticklab + "-SSIS"
+                case "SurtapisStatiqueSautMiniProj":
+                    xticklab = xticklab + "-SSSP"
+                case "SurtapisStatiqueImpactMiniProj":
+                    xticklab = xticklab + "-SSIP"
+                case "TapisStatiqueSautStage":
+                    xticklab = xticklab + "-TSSS"
+                case "TapisStatiqueImpactStage":
+                    xticklab = xticklab + "-TSIS"
                 case "TapisStatiqueSautMiniProj":
                     xticklab = xticklab + "-TSSP"
                 case "TapisStatiqueImpactMiniProj":
-                    xticklab = xticklab + "-TSIP"
-                case "SurtapisStatiqueImpactMiniProj":
-                    xticklab = xticklab + "-SSIP"
+                    xticklab = xticklab + "-TSIP"              
             data.append(pred.data)
+            print(pred.data)
+            print("---------------------------")
             xticklabels.append(xticklab)
         
         ax = plt.axes()
@@ -359,7 +374,7 @@ class dataVisualizer:
         ax.set_xticks(xticks, minor=True)
         # Clean up the appearance
         ax.tick_params(axis='x', which='minor', length=3, width=1)
-        ax.tick_params(axis='x', labelrotation=65)
+        ax.tick_params(axis='x', labelrotation=30)
             # Change the colour of the boxes to Seaborn's 'pastel' palette
             # colors = sns.color_palette('pastel')
             # for patch, color in zip(bp['boxes'], colors):
@@ -384,14 +399,14 @@ class dataVisualizer:
         
         
         if (flagNormality):
-            ax.set_title(title + "ANOVA et TukeyHSD", fontsize=14)
+            ax.set_title(title + ", avec un test ANOVA et TukeyHSD.", fontsize=14)
             ls = list(range(0, len(data)))
             combinations = [(ls[x], ls[x + y]) for y in reversed(ls) for x in range((len(ls) - y))]
             # Une fois que nous sommes surs que nos echantillons sont normaux,
             # nous faisons notre one way anova
             if (scstats.f_oneway(*data)[1] > 0.05):
                 print("On peut accepter l'hypothèse nulle avec une confiance de 5%.")
-                # return
+                return
             
             print("L'hypothèse nulle est rejetée, donc il y a une différence significative entre les echantillons.")    
             
@@ -405,14 +420,15 @@ class dataVisualizer:
                   
         else:
             
-            ax.set_title(title + "Kruskal-Wallis et Dunn", fontsize=14, wrap=True)
+            ax.set_title(title + ", avec un test de Kruskal-Wallis et Dunn.", fontsize=14, wrap=True)
             # Si la loi suivie n'est pas normale, il faut alors réaliser un test
             # de Kruskal Wallis, suivi d'un test post-hoc de Dunn
             ls = list(range(1, len(data) + 1))
             combinations = [(ls[x], ls[x + y]) for y in reversed(ls) for x in range((len(ls) - y))]
             if (scstats.kruskal(*data)[1] > 0.05):
+                print(scstats.kruskal(*data)[1])
                 print("On peut accepter l'hypothèse nulle avec une confiance de 5%.")
-                # return 
+                return 
             
             print("L'hypothèse nulle est rejetée, donc il y a une différence significative entre les echantillons.")    
             
@@ -466,7 +482,8 @@ class dataVisualizer:
         # Annotate sample size below each box
         for i, dataset in enumerate(data):
             sample_size = len(dataset)
-            ax.text(i + 1, bottom-0.005, fr'n = {sample_size}', ha='center', size='x-small')
+            mu = round(np.mean(dataset),2)
+            ax.text(i + 1, bottom-0.005, fr'n = {sample_size}, $\mu$ = {mu}', ha='center', size='x-small')
         
         plt.show()
             
@@ -487,6 +504,7 @@ class dataVisualizer:
         ecartData = []    
         for i in range(0,length):
             meanData.append(stat.mean(sortedData[i]))
+            print(stat.mean(sortedData[i]))
             ecartData.append(stat.pstdev(sortedData[i]))
         for i in range(0,length):
             handles.append(plt.scatter(stat.mean(sortedData[i]),stat.pstdev(sortedData[i]),label=typeTdATab[i],marker = 'x' ))
@@ -510,6 +528,7 @@ def findPeak(tab): # Implémentation naive pour trouver le TdA
     for i in range(ss):
         if abs(tab[i]) > VALEUR_SEUIL: # À mettre à valeur positive
             return i
+    return -1
 
 def tij(first,second): # Différence de temps d'arrivée
     # return (first.t - second.t)*0.001 # Mettre des secondes au lieu des indices de tableau    
@@ -673,31 +692,33 @@ def initialize_IMU_Temporel(CurrentImpactAccelero,traitementAccelerometreParam):
                     Imu8.t = findPeak(hilbertEnveloppe(M33))
                 case _:
                     print("Cette méthode pour récupérer le TdA n'est pas valable.")
-                    
         case _:
             print("Cette méthode pour récupérer l'accélération n'est pas valable.")
+    if Imu1.t == -1 or Imu2.t == -1 or Imu3.t == -1 or Imu4.t == -1 or Imu5.t == -1 or Imu6.t == -1 or Imu7.t == -1 or Imu8.t == -1 : 
+        return -1
+                     
 
 def initialize_IMU_Spatial(IMULocalisations):  
 
     if "Statique" in DATA_SET:    
         # Initialisation des positions en x
-        Imu1.x = IMULocalisations[0][0]
-        Imu2.x = IMULocalisations[1][0]
-        Imu3.x = IMULocalisations[2][0]
-        Imu4.x = IMULocalisations[3][0]
-        Imu5.x = IMULocalisations[4][0]
-        Imu6.x = IMULocalisations[5][0]
-        Imu7.x = IMULocalisations[6][0]
-        Imu8.x = IMULocalisations[7][0]
+        Imu1.x = IMULocalisations[0][0][0]
+        Imu2.x = IMULocalisations[0][1][0]
+        Imu3.x = IMULocalisations[0][2][0]
+        Imu4.x = IMULocalisations[0][3][0]
+        Imu5.x = IMULocalisations[0][4][0]
+        Imu6.x = IMULocalisations[0][5][0]
+        Imu7.x = IMULocalisations[0][6][0]
+        Imu8.x = IMULocalisations[0][7][0]
         # Initialisation des positions en y
-        Imu1.y = IMULocalisations[0][1]
-        Imu2.y = IMULocalisations[1][1]
-        Imu3.y = IMULocalisations[2][1]
-        Imu4.y = IMULocalisations[3][1]
-        Imu5.y = IMULocalisations[4][1]
-        Imu6.y = IMULocalisations[5][1]
-        Imu7.y = IMULocalisations[6][1]
-        Imu8.y = IMULocalisations[7][1]
+        Imu1.y = IMULocalisations[0][0][1]
+        Imu2.y = IMULocalisations[0][1][1]
+        Imu3.y = IMULocalisations[0][2][1]
+        Imu4.y = IMULocalisations[0][3][1]
+        Imu5.y = IMULocalisations[0][4][1]
+        Imu6.y = IMULocalisations[0][5][1]
+        Imu7.y = IMULocalisations[0][6][1]
+        Imu8.y = IMULocalisations[0][7][1]
     else:
         # Initialisation des positions en x
         Imu1.x = np.mean(IMULocalisations[:,0,0])
@@ -768,7 +789,7 @@ def findPoint(CurrentImpactAccelero):
                 case "Trilateration" :
                     match TYPE_TDA:
                         case "SeuilNaif" :
-                            res = sc.optimize.minimize(trilaterationMethodSeuilNaif, x0, bounds=b)
+                            res = sc.optimize.minimize(trilaterationMethodSeuilNaif, x0, bounds=b,method=TYPE_OPTIMISATION)
                         case "CrossCorrelation" :
                             res = sc.optimize.minimize(trilaterationMethodCrossCorrelation, x0, bounds=b)
                         case "SeuilEnveloppe" :
@@ -798,7 +819,7 @@ def plotAllFoundAndKnownPoints(foundPoints,KnownPoints):
     plt.scatter(knownPointsAllX,knownPointsAllY,color = 'b',marker = 'x' )
     plt.ylim(-0.1,1.9)
     plt.xlim(-0.1,1.9)
-    plt.legend(["Points trouvés","Points connus"],bbox_to_anchor=(1.05, 1.0), loc='upper left')
+    plt.legend(["Points trouvés","Points connus"], loc='upper right')
     if SHOW_FIGURES:
         plt.show()
     else:
@@ -806,6 +827,26 @@ def plotAllFoundAndKnownPoints(foundPoints,KnownPoints):
         plt.close()
 
 
+def plotSomeFoundAndKnownPoints(foundPoints,KnownPoints):
+    
+    
+    colors = ["gray","red","orange","chartreuse","mediumturquoise","royalblue","blueviolet","peru","cyan","yellow","magenta","black","olive"]
+    
+    
+    for i in range(0,7):
+        plt.scatter(foundPoints[i][0],foundPoints[i][1],color = colors[i],marker = 'x' )
+        plt.scatter(KnownPoints[i][0][0],KnownPoints[i][1][0],color = colors[i],marker = '+' )
+        print(i)
+    
+    
+    plt.ylim(-0.1,1.9)
+    plt.xlim(-0.1,1.9)
+    plt.legend(["Points trouvés","Points connus"], loc='upper right')
+    if SHOW_FIGURES:
+        plt.show()
+    else:
+        plt.savefig(IMAGE_PATH + '/comparaisonSomePoint.png',bbox_inches='tight', dpi = 500 )
+        plt.close()
 
 
 
@@ -890,16 +931,28 @@ def main():
             (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/tapis/impacteur/impacteur_accelero_set2.npy"),np.load("Data/tapis/impacteur/impacteur_localisation_set2.npy"),np.load("Data/tapis/impacteur/impacteur_pos_accelero_set2.npy"))
         case "TapisToutMiniProj":
             (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/tapis/complet/data set_accelero_set2.npy"),np.load("Data/tapis/complet/data set_localisation_set2.npy"),np.load("Data/tapis/complet/data set_pos_accelero_set2.npy"))
-        case "TapisStatiqueSautMiniProj":
-            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/tapis/sauts/sauts_accelero_set2.npy"),np.load("Data/tapis/sauts/sauts_localisation_set2.npy"),np.load("Data/tapis/sauts/statique_tapis.npy"))
-        case "TapisStatiqueImpactMiniProj":
-            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/tapis/impacteur/impacteur_accelero_set2.npy"),np.load("Data/tapis/impacteur/impacteur_localisation_set2.npy"),np.load("Data/tapis/impacteur/statique_tapis.npy"))
+        case "SurtapisStatiqueSautStage":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/surtapis/saut/sauts_accelero_set1.npy"),np.load("Data/surtapis/saut/sauts_localisation_set1.npy"),np.load("Data/surtapis/saut/sauts_pos_statique_accelero_set1.npy"))
+        case "SurtapisStatiqueImpactStage":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/surtapis/impacteur/impacteur_accelero_set1.npy"),np.load("Data/surtapis/impacteur/impacteur_localisation_set1.npy"),np.load("Data/surtapis/impacteur/impacteur_pos_statique_accelero_set1.npy"))
+        case "SurtapisStatiqueSautMiniProj":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/surtapis/saut/sauts_accelero_set2.npy"),np.load("Data/surtapis/saut/sauts_localisation_set2.npy"),np.load("Data/surtapis/saut/sauts_pos_statique_accelero_set2.npy"))
         case "SurtapisStatiqueImpactMiniProj":
-            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/surtapis/impacteur/impacteur_accelero_set2.npy"),np.load("Data/surtapis/impacteur/impacteur_localisation_set2.npy"),np.load("Data/surtapis/impacteur/statique_surtapis.npy"))
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/surtapis/impacteur/impacteur_accelero_set2.npy"),np.load("Data/surtapis/impacteur/impacteur_localisation_set2.npy"),np.load("Data/surtapis/impacteur/impacteur_pos_statique_accelero_set2.npy"))
+        case "TapisStatiqueSautStage":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/tapis/sauts/sauts_accelero_set1.npy"),np.load("Data/tapis/sauts/sauts_localisation_set1.npy"),np.load("Data/tapis/sauts/sauts_pos_statique_accelero_set1.npy"))
+        case "TapisStatiqueImpactStage":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/tapis/impacteur/impacteur_accelero_set1.npy"),np.load("Data/tapis/impacteur/impacteur_localisation_set1.npy"),np.load("Data/tapis/impacteur/impacteur_pos_statique_accelero_set1.npy"))
+        case "TapisStatiqueSautMiniProj":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/tapis/sauts/sauts_accelero_set2.npy"),np.load("Data/tapis/sauts/sauts_localisation_set2.npy"),np.load("Data/tapis/sauts/sauts_pos_statique_accelero_set2.npy"))
+        case "TapisStatiqueImpactMiniProj":
+            (ImpactAccelero, ImpactLocalisation, IMULocalisations) = (np.load("Data/tapis/impacteur/impacteur_accelero_set2.npy"),np.load("Data/tapis/impacteur/impacteur_localisation_set2.npy"),np.load("Data/tapis/impacteur/impacteur_pos_statique_accelero_set2.npy"))
         case _:
             print("Ce dataset n'est pas valable.") 
             
     nb_impact = len(ImpactAccelero)
+    nb_impact_faits = nb_impact
+    # nb_impact = 50
     deb = 0
     
     err = []
@@ -913,20 +966,33 @@ def main():
     # initialize_IMU_Spatial(IMULocalisations)
     # for current_impact_index in range(deb, deb+nb_impact):
     #     # print(current_impact_index)
-    #     initialize_IMU_Temporel(ImpactAccelero[current_impact_index],TRAITEMENT_ACCELEROMETRE)
-    #     foundPoint = findPoint(ImpactAccelero[current_impact_index])
-    #     norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
-    #     print(current_impact_index)
-    #     if norm_Error > 3:
-    #         print("Erreur dans le calcul de la norme.")
-    #     else :    
-    #         plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
-    #         ratio.append(differentiateSupposedAndTrueIMUsOrder(ImpactLocalisation[current_impact_index][0][0],ImpactLocalisation[current_impact_index][1][0]))
-    #         err.append(norm_Error)
-    #         foundPoints.append([foundPoint[0],foundPoint[1]])
+    #     ret = initialize_IMU_Temporel(ImpactAccelero[current_impact_index],TRAITEMENT_ACCELEROMETRE)
+    #     if ret != -1:
+    #         foundPoint = findPoint(ImpactAccelero[current_impact_index])
+    #         norm_Error = math.sqrt(math.pow((foundPoint[0]-ImpactLocalisation[current_impact_index][0][0]),2)+math.pow((foundPoint[1]-ImpactLocalisation[current_impact_index][1][0]),2))
+    #         print(current_impact_index)
+    #         if norm_Error > 3:
+    #             print("Erreur dans le calcul de la norme.")
+    #         else :    
+    #             # plotPoints(ImpactLocalisation[current_impact_index],foundPoint,current_impact_index)
+    #             ratio.append(differentiateSupposedAndTrueIMUsOrder(ImpactLocalisation[current_impact_index][0][0],ImpactLocalisation[current_impact_index][1][0]))
+    #             err.append(norm_Error)
+    #             foundPoints.append([foundPoint[0],foundPoint[1]])
+    #     else:
+    #         nb_impact_faits = nb_impact_faits - 1
         
         
     # plotAllFoundAndKnownPoints(foundPoints,ImpactLocalisation)
+    
+    # # Pour plot 13 impacts différents
+
+    # randomImpacts = []
+    # for i in range(0,7):
+    #     randomImpacts.append(rd.randrange(0,nb_impact_faits))
+        
+        
+    
+    # plotSomeFoundAndKnownPoints([foundPoints[i] for i in randomImpacts], [ImpactLocalisation[i] for i in randomImpacts])
     
     # prediction = Prediction(TYPE_LOCALISATION, TYPE_TDA, TYPE_OPTIMISATION, VALEUR_SEUIL, TRAITEMENT_ACCELEROMETRE, DATA_SET)
     
@@ -934,19 +1000,25 @@ def main():
     
     # prediction.addDataRatio(ratio)
     
-    # prediction.ratioVsError()
+    # # prediction.ratioVsError()
     
     # prediction.saveToJson()
 
     # Partie a decommenter pour faire de la comparaison
     
     
+   
+    
+   
+        
+    
     dataVisu = dataVisualizer(JSON_FILE)
     # # # # print(foundPoints[:][1])
     # dataVisu.anovaTest(["Trilateration","Trilateration"], ["CrossCorrelation","CrossCorrelation"], ["Default","Default"], ["Norme","Norme"], ["TapisImpactMiniProj","TapisStatiqueImpactMiniProj"])
-    
-    dataVisu.box_and_whisker("Comparaison des calculs de TdA ", r'Erreur de prédiction $(m)$')
-    
+ 
+    dataVisu.box_and_whisker(r"Différence entre l'axe vertical et la norme pour les mesures des IMUs", r'Erreur de prédiction $(m)$')
+    # print(np.mean(dataVisu.predictions[0].data))
+    # print(np.mean(dataVisu.predictions[1].data))
     # dataVisu.compareData(["Trilateration","Trilateration"], ["CrossCorrelation","CrossCorrelation"], ["Default","Default"], ["Norme","Norme"], ["TapisImpactMiniProj","TapisStatiqueImpactMiniProj"])
     # dataVisu.compareData(["Trilateration","Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation","SeuilEnveloppe"], ["Default","Default","Default"], ["Norme","Norme","Norme"], ["TapisSautStage","TapisSautStage","TapisSautStage"])
     # # dataVisu.compareData(["Trilateration","Trilateration"], ["SeuilNaif","CrossCorrelation"])
